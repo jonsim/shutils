@@ -8,6 +8,9 @@ TODO
 
 ## Documentation
 ### b2r
+#### Type
+Python script
+
 #### Usage
 ```
 usage: b2r [-h] [number-of-bytes]
@@ -16,18 +19,19 @@ Tiny program to convert a raw number of bytes (either decimal or
 prefixed hex) into a human readable form.
 
 positional arguments:
-  number-of-bytes    number of bytes to convert. May be ommitted to
+  number-of-bytes    Number of bytes to convert. May be ommitted to
                      consume from stdin
 
 optional arguments:
-  -h, --help         print this message and exit
+  -h, --help         Print this message and exit
 ```
 
 #### Examples
 ```sh
-$ ./b2r.py 1234567890
+b2r 1234567890
 1.15G
 
-$ echo 0x512 | python b2r.py
+echo 0x512 | b2r
 1.27K
 ```
+
