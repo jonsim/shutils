@@ -1,5 +1,5 @@
 #!/bin/sh
-# (c) Jonathan Simmonds 2017
+# (c) Copyright 2017 Jonathan Simmonds
 # Simple, not hugely robust script, to automatically generate the documentation
 # for each shutil from its -h option and example scripts.
 set -e
@@ -22,12 +22,13 @@ fi
 
 SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
 SHUTIL_DIR="${SCRIPT_DIR}/.."
-RM_HEADER="${SCRIPT_DIR}/README-header.md"
-RM_USAGE="${SCRIPT_DIR}/README-usage.md"
+RM_HEADER="${SCRIPT_DIR}/readme-header.md"
+RM_USAGE="${SCRIPT_DIR}/readme-usage.md"
+RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
 RM_FINAL="${SHUTIL_DIR}/README.md"
 
 # Generate usage readme
-echo "" > ${RM_USAGE}
+echo "## Documentation" > ${RM_USAGE}
 
 # List all example scripts
 EXAMPLE_SCRIPTS=$(find ${SCRIPT_DIR} -maxdepth 1 -type f -name '*.examples.sh' -printf '%f\n' | sort)
@@ -44,16 +45,18 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     # Write usage
     echo "#### Usage"                                       >> ${RM_USAGE}
     echo '```'                                              >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} ${SHUTIL} -h                 >> ${RM_USAGE} 2>&1
+    set +e
+    PATH=${SHUTIL_DIR}:${PATH} ${SHUTIL} -h                 >> ${RM_USAGE}
+    set -e
     echo '```'                                              >> ${RM_USAGE}
     echo ""                                                 >> ${RM_USAGE}
     # Write examples
     echo "#### Examples"                                    >> ${RM_USAGE}
     echo '```sh'                                            >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} sh -v ${EXAMPLE}             >> ${RM_USAGE} 2>&1
+    PATH=${SHUTIL_DIR}:${PATH} sh -v ${SCRIPT_DIR}/${EXAMPLE}   >> ${RM_USAGE} 2>&1
     echo '```'                                              >> ${RM_USAGE}
     echo ""                                                 >> ${RM_USAGE}
 done
 
 # Merge header and usage into destination readme.
-cat ${RM_HEADER} ${RM_USAGE} > ${RM_FINAL}
+cat ${RM_HEADER} ${RM_USAGE} ${RM_FOOTER} > ${RM_FINAL}

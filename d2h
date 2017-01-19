@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+# (c) Copyright 2017 Jonathan Simmonds
+# Little script to convert between hex and decimal. This single script performs
+# both functions and may be renamed between d2h and h2d.
+import sys, os
+
+def usage(script_name, hex_to_decimal):
+    src = "hex" if hex_to_decimal else "decimal"
+    dst = "decimal" if hex_to_decimal else "hex"
+    print "usage: %s [-h] [number]" % (script_name)
+    print ""
+    print "Tiny program to convert a number in %s to %s." % (src, dst)
+    print ""
+    print "positional arguments:"
+    print "  number         %s number. May be ommitted to read from stdin." % (src)
+    print ""
+    print "optional arguments:"
+    print "  -h, --help     Print this message and exit"
+    sys.exit(1)
+
+# Work out what functionality we are trying to provide.
+script_name = os.path.basename(sys.argv[0])
+hex_to_decimal = script_name[0] in ['H', 'h']
+# Parse the command line.
+argc = len(sys.argv)
+lines = []
+if argc == 1 and not sys.stdin.isatty():
+    for line in sys.stdin:
+        lines.append(line)
+elif argc == 2:
+    arg = sys.argv[1]
+    if arg == "-h" or arg == "-help" or arg == "--help":
+        usage(script_name, hex_to_decimal)
+    lines.append(arg)
+else:
+    usage(script_name, hex_to_decimal)
+
+# Actual implemetation...
+for line in lines:
+    if hex_to_decimal:
+        print int(line, 16)
+    else:
+        print hex(int(line))

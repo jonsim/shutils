@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# (c) Copyright 2017 Jonathan Simmonds
+# Small script to convert a raw number of bytes to a human readable format.
 import sys, math
 
 def minimal_float(f):
@@ -15,7 +17,7 @@ def usage():
     print ""
     print "positional arguments:"
     print "  number-of-bytes    Number of bytes to convert. May be ommitted to"
-    print "                     consume from stdin"
+    print "                     read from stdin"
     print ""
     print "optional arguments:"
     print "  -h, --help         Print this message and exit"
