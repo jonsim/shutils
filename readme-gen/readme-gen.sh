@@ -4,7 +4,15 @@
 # for each shutil from its -h option and example scripts.
 set -e
 
-if [ $# -ne 0 ]; then
+SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
+SHUTIL_DIR="${SCRIPT_DIR}/.."
+RM_HEADER="${SCRIPT_DIR}/readme-header.md"
+RM_USAGE="${SCRIPT_DIR}/readme-usage.md"
+RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
+RM_FINAL="${SHUTIL_DIR}/README.md"
+
+usage()
+{
     echo "usage: readme-gen.sh [-h]"
     echo ""
     echo "Simple, not hugely robust, script to automatically generate the"
@@ -16,16 +24,13 @@ if [ $# -ne 0 ]; then
     echo "to generate the example information."
     echo ""
     echo "optional arguments:"
-    echo "  -h, --help         Print this message and exit"
-    exit
-fi
+    echo "  -h, --help         Print this message and exit."
+    exit 1
+}
 
-SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
-SHUTIL_DIR="${SCRIPT_DIR}/.."
-RM_HEADER="${SCRIPT_DIR}/readme-header.md"
-RM_USAGE="${SCRIPT_DIR}/readme-usage.md"
-RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
-RM_FINAL="${SHUTIL_DIR}/README.md"
+if [ $# -ne 0 ]; then
+    usage
+fi
 
 # Generate usage readme
 echo "# Documentation"  > ${RM_USAGE}
@@ -53,7 +58,7 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     # Write examples
     echo "#### Examples"                                        >> ${RM_USAGE}
     echo '```sh'                                                >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} sh -v ${SCRIPT_DIR}/${EXAMPLE}   >> ${RM_USAGE} 2>&1
+    PATH=${SHUTIL_DIR}:${PATH} sh -v ${SCRIPT_DIR}/${EXAMPLE} 2>&1 | sed -e 's/^set +v$//g' >> ${RM_USAGE}
     echo '```'                                                  >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
 done

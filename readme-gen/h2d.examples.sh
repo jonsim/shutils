@@ -1,3 +1,3 @@
-h2d 42
+h2d 0x42
 
-echo 0x1234 | h2d
+echo 1234 | h2d

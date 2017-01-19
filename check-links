@@ -1,0 +1,62 @@
+#!/bin/sh
+# (c) Copyright 2017 Jonathan Simmonds
+# Simple application to confirm the validity of symlinks in a directory.
+set -e
+
+usage()
+{
+    echo "usage: check-links [-p] [-h] [directory]"
+    echo ""
+    echo "Simple application to confirm the validity of symlinks in a directory."
+    echo ""
+    echo "positional arguments:"
+    echo "  directory   Optional directory to search in. If ommitted the current"
+    echo "              working directory is used."
+    echo ""
+    echo "optional arguments:"
+    echo "  -p          Run in script mode, outputing just the name of all"
+    echo "              broken links to stdout. In interactive mode (default)"
+    echo "              output is decorated."
+    echo "  -h, --help  Print this message and exit."
+    exit 1
+}
+
+SCRIPT_MODE=false
+DIRECTORY="."
+
+# Handle command line
+while [ $# -gt 0 ]; do
+    command_line_arg="$1"
+    shift
+
+    case "$command_line_arg" in
+        -p)
+            SCRIPT_MODE=true
+            ;;
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            DIRECTORY="$command_line_arg"
+            ;;
+    esac
+done
+
+# Actual implementation
+DIR_FILES=$(find "$DIRECTORY" -maxdepth 1 -print)
+RET=0
+for f in $DIR_FILES; do
+    if [ ! -f $(readlink "$f") ]; then
+        RET=1
+        if [ $SCRIPT_MODE = true ]; then
+            echo "$f"
+        else
+            echo "WARNING: link '$f' is broken."
+        fi
+    fi
+done
+
+exit $RET

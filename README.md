@@ -22,10 +22,10 @@ prefixed hex) into a human readable form.
 
 positional arguments:
   number-of-bytes    Number of bytes to convert. May be ommitted to
-                     read from stdin
+                     read from stdin.
 
 optional arguments:
-  -h, --help         Print this message and exit
+  -h, --help         Print this message and exit.
 ```
 
 #### Examples
@@ -35,6 +35,44 @@ b2r 1234567890
 
 echo 0x512 | b2r
 1.27K
+```
+
+## check-links
+#### Type
+POSIX shell script
+
+#### Usage
+```
+usage: check-links [-p] [-h] [directory]
+
+Simple application to confirm the validity of symlinks in a directory.
+
+positional arguments:
+  directory   Optional directory to search in. If ommitted the current
+              working directory is used.
+
+optional arguments:
+  -p          Run in script mode, outputing just the name of all
+              broken links to stdout. In interactive mode (default)
+              output is decorated.
+  -h, --help  Print this message and exit.
+```
+
+#### Examples
+```sh
+touch real-file.txt
+ln -s real-file.txt real-link.txt
+ln -s fake-file.txt fake-link.txt
+
+check-links
+WARNING: link './fake-link.txt' is broken.
+
+rm real-file.txt
+
+check-links -p .
+./real-link.txt
+./fake-link.txt
+
 ```
 
 ## d2h
@@ -51,7 +89,7 @@ positional arguments:
   number         decimal number. May be ommitted to read from stdin.
 
 optional arguments:
-  -h, --help     Print this message and exit
+  -h, --help     Print this message and exit.
 ```
 
 #### Examples
@@ -77,15 +115,15 @@ positional arguments:
   number         hex number. May be ommitted to read from stdin.
 
 optional arguments:
-  -h, --help     Print this message and exit
+  -h, --help     Print this message and exit.
 ```
 
 #### Examples
 ```sh
-h2d 42
+h2d 0x42
 66
 
-echo 0x1234 | h2d
+echo 1234 | h2d
 4660
 ```
 

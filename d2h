@@ -15,7 +15,7 @@ def usage(script_name, hex_to_decimal):
     print "  number         %s number. May be ommitted to read from stdin." % (src)
     print ""
     print "optional arguments:"
-    print "  -h, --help     Print this message and exit"
+    print "  -h, --help     Print this message and exit."
     sys.exit(1)
 
 # Work out what functionality we are trying to provide.

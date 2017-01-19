@@ -17,10 +17,10 @@ def usage():
     print ""
     print "positional arguments:"
     print "  number-of-bytes    Number of bytes to convert. May be ommitted to"
-    print "                     read from stdin"
+    print "                     read from stdin."
     print ""
     print "optional arguments:"
-    print "  -h, --help         Print this message and exit"
+    print "  -h, --help         Print this message and exit."
     sys.exit(1)
 
 
