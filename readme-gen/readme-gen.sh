@@ -28,8 +28,7 @@ RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
 RM_FINAL="${SHUTIL_DIR}/README.md"
 
 # Generate usage readme
-echo "## Documentation"  > ${RM_USAGE}
-echo '---'              >> ${RM_USAGE}
+echo "# Documentation"  > ${RM_USAGE}
 
 # List all example scripts
 EXAMPLE_SCRIPTS=$(find ${SCRIPT_DIR} -maxdepth 1 -type f -name '*.examples.sh' -printf '%f\n' | sort)
@@ -38,7 +37,7 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     SHUTIL=$(echo ${EXAMPLE} | sed -e 's/\.examples\.sh//g')
     # Write the .md
     # Write title
-    echo "### ${SHUTIL}"                                        >> ${RM_USAGE}
+    echo "## ${SHUTIL}"                                        >> ${RM_USAGE}
     # Write type
     echo "#### Type"                                            >> ${RM_USAGE}
     file --b ${SHUTIL_DIR}/${SHUTIL} | sed -e 's/,.*$//'        >> ${RM_USAGE}

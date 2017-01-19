@@ -8,9 +8,8 @@ few Python files to. All of these have been written with Python 2.7.
 ## Installation
 TODO
 
-## Documentation
----
-### b2r
+# Documentation
+## b2r
 #### Type
 Python script
 
@@ -39,7 +38,7 @@ echo 0x512 | b2r
 ```
 ---
 
-### d2h
+## d2h
 #### Type
 Python script
 
@@ -66,7 +65,7 @@ echo 1234 | d2h
 ```
 ---
 
-### h2d
+## h2d
 #### Type
 symbolic link to d2h
 
