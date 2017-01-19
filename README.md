@@ -9,6 +9,7 @@ few Python files to. All of these have been written with Python 2.7.
 TODO
 
 ## Documentation
+---
 ### b2r
 #### Type
 Python script
@@ -36,6 +37,7 @@ b2r 1234567890
 echo 0x512 | b2r
 1.27K
 ```
+---
 
 ### d2h
 #### Type
@@ -62,6 +64,7 @@ d2h 42
 echo 1234 | d2h
 0x4d2
 ```
+---
 
 ### h2d
 #### Type
@@ -88,6 +91,7 @@ h2d 42
 echo 0x1234 | h2d
 4660
 ```
+---
 
 ## License
 All files are licensed under the MIT license.
