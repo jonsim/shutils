@@ -55,7 +55,6 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     echo '```sh'                                                >> ${RM_USAGE}
     PATH=${SHUTIL_DIR}:${PATH} sh -v ${SCRIPT_DIR}/${EXAMPLE}   >> ${RM_USAGE} 2>&1
     echo '```'                                                  >> ${RM_USAGE}
-    echo '---'                                                  >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
 done
 
