@@ -53,12 +53,13 @@ fi
 # Generate table of contents
 echo "# Table of Contents"   > ${RM_TOC}
 gen_toc_entry "shutils" 1
-gen_toc_entry "Installation" 1
-gen_toc_entry "License" 1
-gen_toc_entry "Documentation" 1
+gen_toc_entry "Dependencies" 2
+gen_toc_entry "Installation" 2
+gen_toc_entry "License" 2
 
 # Generate usage readme
 echo "# Documentation"  > ${RM_USAGE}
+gen_toc_entry "Documentation" 1
 
 # List all example scripts
 EXAMPLE_SCRIPTS=$(find ${SCRIPT_DIR} -maxdepth 1 -type f -name '*.examples.sh' -printf '%f\n' | sort)

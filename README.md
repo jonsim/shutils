@@ -1,7 +1,8 @@
 # Table of Contents
  - [shutils](#shutils)
- - [Installation](#installation)
- - [License](#license)
+  - [Dependencies](#dependencies)
+  - [Installation](#installation)
+  - [License](#license)
  - [Documentation](#documentation)
   - [b2r](#b2r)
     - [Type](#type)
@@ -25,16 +26,19 @@
     - [Examples](#examples-4)
 
 # shutils
-Collection of my (mostly) sh utils. Where not possible to use sh, bash has been
-used instead, but a preference for sh has been made where possible. There are a
-few Python files to. All of these have been written with Python 2.7.
+Collection of my sh utils, for use in all POSIX compliant shells. All
+applications have been implemented either as a POSIX compliant sh script, or as
+a Python script.
 
 &copy; Copyright 2017 Jonathan Simmonds
 
-# Installation
+## Dependencies
+* Python 2.7+
+
+## Installation
 TODO
 
-# License
+## License
 All files are licensed under the MIT license.
 
 # Documentation
