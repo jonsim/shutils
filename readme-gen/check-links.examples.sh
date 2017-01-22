@@ -1,3 +1,4 @@
+set -v
 touch real-file.txt
 ln -s real-file.txt real-link.txt
 ln -s fake-file.txt fake-link.txt

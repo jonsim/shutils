@@ -24,7 +24,7 @@ usage()
     echo "to generate the example information."
     echo ""
     echo "optional arguments:"
-    echo "  -h, --help         Print this message and exit."
+    echo "  -h, --help      Print this message and exit."
     exit 1
 }
 
@@ -58,7 +58,7 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     # Write examples
     echo "#### Examples"                                        >> ${RM_USAGE}
     echo '```sh'                                                >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} sh -v ${SCRIPT_DIR}/${EXAMPLE} 2>&1 | sed -e 's/^set +v$//g' >> ${RM_USAGE}
+    PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 | sed -e 's/^set +v$//g' >> ${RM_USAGE}
     echo '```'                                                  >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
 done

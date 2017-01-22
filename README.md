@@ -127,5 +127,41 @@ echo 1234 | h2d
 4660
 ```
 
+## search
+#### Type
+POSIX shell script
+
+#### Usage
+```
+usage: search [-i] [-f] [-h] [path] regex
+
+Simple recursive file searcher, wrapping a handful of common find/grep
+combos and decorating the output. Ignores .git and .svn directories.
+
+positional arguments:
+  path        Optional path to perform the search in. If ommitted the
+              current working directory is used.
+  regex       Perl-style regular expression to search for. It is
+              recommended to pass this in single quotes to prevent
+              shell expansion/interpretation of the regex characters.
+
+optional arguments:
+  -i          Enable case-insensitive searching.
+  -f          Performs the search on the names of files rather than on
+              their contents.
+  -h, --help  Print this message and exit.
+```
+
+#### Examples
+```sh
+./search printers 'def search_result.+:'
+printers/decorategrep.py:33  def search_result_from_grep(output):
+printers/decoratefind.py:16  def search_results_from_find(output):
+
+./search -f -i 'e\.md'
+./readme-gen/readme-usage.md
+./README.md
+```
+
 # License
 All files are licensed under the MIT license.

@@ -8,9 +8,11 @@ usage()
 	echo "usage: search [-i] [-f] [-h] [path] regex"
     echo ""
     echo "Simple recursive file searcher, wrapping a handful of common find/grep"
-    echo "combos and decorating the output."
+    echo "combos and decorating the output. Ignores .git and .svn directories."
     echo ""
     echo "positional arguments:"
+    echo "  path        Optional path to perform the search in. If ommitted the"
+    echo "              current working directory is used."
     echo "  regex       Perl-style regular expression to search for. It is"
     echo "              recommended to pass this in single quotes to prevent"
     echo "              shell expansion/interpretation of the regex characters."
@@ -20,8 +22,6 @@ usage()
 	echo "  -f          Performs the search on the names of files rather than on"
     echo "              their contents."
 	echo "  -h, --help  Print this message and exit."
-    echo "  path        Optional path to perform the search in. If ommitted the"
-    echo "              current working directory is used."
 	exit 1
 }
 
@@ -74,6 +74,11 @@ if [ -z "$SEARCH_PATH" ]; then
     SEARCH_PATH="."
 fi
 
+# If we are not outputting to a terminal, stop the printer colouring output.
+if [ ! -t 1 ]; then
+    PRINTER_ARGS="-p"
+fi
+
 # Perform the search
 if [ $FIND_MODE = true ]; then
     if [ $CASE_SENSITIVE = false ]; then
@@ -82,7 +87,7 @@ if [ $FIND_MODE = true ]; then
         FIND_ARGS="-regex"
     fi
     find "$SEARCH_PATH" \( -path '*/.git' -o -path '*/.svn' \) -prune -o $FIND_ARGS ".*${SEARCH_TERM}.*" -print0 | \
-        python "${SCRIPT_DIR}/printers/decoratefind.py" -t "${SEARCH_TERM}"
+        python "${SCRIPT_DIR}/printers/decoratefind.py" ${PRINTER_ARGS} -t "${SEARCH_TERM}"
 else
     # r (recursive), n (print line num), s (no error messages), H (print filename),
     # Z (NUL terminate filenames), I (ignore binary files), P (Perl regex)
@@ -91,5 +96,5 @@ else
         GREP_ARGS="${GREP_ARGS}i"
     fi
     grep --color=never $GREP_ARGS --exclude-dir=".svn" --exclude-dir=".git" "$SEARCH_TERM" "$SEARCH_PATH" | \
-        python "${SCRIPT_DIR}/printers/decorategrep.py" -t "$SEARCH_TERM"
+        python "${SCRIPT_DIR}/printers/decorategrep.py" ${PRINTER_ARGS} -t "${SEARCH_TERM}"
 fi
