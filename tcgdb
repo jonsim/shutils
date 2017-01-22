@@ -1,0 +1,68 @@
+#!/bin/sh
+# (c) Copyright 2017 Jonathan Simmonds
+# Basic wrapper on top of cgdb to separate program output into a tmux panel.
+set -e
+
+usage()
+{
+	echo "usage: tcgdb [-h] program [gdb-arg [gdb-arg [...]]]"
+    echo ""
+    echo "Basic wrapper on top of cgdb to separate program output into a tmux"
+    echo "panel. The Rolls Royce of terminal debuggers."
+    echo ""
+    echo "positional arguments:"
+    echo "  program     Path to the application to debug."
+    echo "  gdb-args    All additional arguments will be passed as gdb options to"
+    echo "              cgdb (which will pass them straight through to gdb). If"
+    echo "              tcgdb immediately exits these commands are likely invalid."
+    echo ""
+    echo "optional arguments:"
+	echo "  -h, --help  Print this message and exit."
+	exit 1
+}
+
+# Script variables
+SESSIONNAME="tcgdb-session"
+DBG_TARGET=""
+GDB_ARGS=""
+FULL_CMDLINE="$0 $@"
+
+# Handle command line
+while [ $# -gt 0 ]; do
+    command_line_arg="$1"
+    shift
+    case $command_line_arg in
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            if [ -n "$DBG_TARGET" ]; then
+                # If the search term has already been set, aggregate all other
+                # options to the gdb command line.
+                GDB_ARGS="$GDB_ARGS $command_line_arg"
+            else
+                DBG_TARGET="$command_line_arg"
+            fi
+            ;;
+    esac
+done
+if [ -z "$DBG_TARGET" ]; then
+    usage
+fi
+
+# Check if a tmux session is already running.
+set +e
+tmux has-session -t "${SESSIONNAME}" > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    # If not create a new session and re-run this script within it.
+    tmux new-session -s "${SESSIONNAME}" "$FULL_CMDLINE" > /dev/null
+else
+    # If so, take control of it and execute cgdb in it.
+    tmux split-window -h -p 50 "gdbserver :12345 ${DBG_TARGET}"
+    tmux select-pane -t 0
+    cgdb -- -ex "target remote localhost:12345" ${GDB_ARGS}
+    tmux kill-session -t "${SESSIONNAME}"
+fi

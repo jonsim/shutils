@@ -24,10 +24,14 @@
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
-  - [xwinid](#xwinid)
+  - [tcgdb](#tcgdb)
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
+  - [xwinid](#xwinid)
+    - [Type](#type-6)
+    - [Usage](#usage-6)
+    - [Examples](#examples-6)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -198,6 +202,32 @@ printers/decoratefind.py:16  def search_results_from_find(output):
 search -f -i 'e\.md'
 ./readme-gen/readme-usage.md
 ./README.md
+```
+
+## tcgdb
+#### Type
+POSIX shell script
+
+#### Usage
+```
+usage: tcgdb [-h] program [gdb-arg [gdb-arg [...]]]
+
+Basic wrapper on top of cgdb to separate program output into a tmux
+panel. The Rolls Royce of terminal debuggers.
+
+positional arguments:
+  program     Path to the application to debug.
+  gdb-args    All additional arguments will be passed as gdb options to
+              cgdb (which will pass them straight through to gdb). If
+              tcgdb immediately exits these commands are likely invalid.
+
+optional arguments:
+  -h, --help  Print this message and exit.
+```
+
+#### Examples
+```sh
+tcgdb someapp.out
 ```
 
 ## xwinid

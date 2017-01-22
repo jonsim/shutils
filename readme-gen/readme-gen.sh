@@ -19,14 +19,15 @@ usage()
     echo ""
     echo "Simple, not hugely robust, script to automatically generate the"
     echo "documentation for all shutils. This is done by: for all"
-    echo "<shutil>.examples.sh files alongside this script, running:"
+    echo "<shutil>.examples.* files alongside this script, running:"
     echo "  <shutil> -h"
     echo "to retrieve its usage information and running:"
     echo "  sh <shutil>.examples.sh"
-    echo "to generate the example information. This .examples.sh script should"
-    echo "call 'set +v' accordingly to ensure the commands are displayed with"
-    echo "the output. 'set -v' can be interleaved to disable logging, e.g. to"
-    echo "perform setup or tear-down actions."
+    echo "if available to generate the example information. This .examples.sh"
+    echo "script should call 'set +v' accordingly to ensure the commands are"
+    echo "displayed with the output. 'set -v' can be interleaved to disable"
+    echo "logging, e.g. to perform setup or tear-down actions. If no .sh file"
+    echo "exists, the contents of the matching file is simply appended."
     echo ""
     echo "optional arguments:"
     echo "  -h, --help      Print this message and exit."
@@ -65,11 +66,11 @@ echo "# Documentation"  > ${RM_USAGE}
 gen_toc_entry "Documentation" 1
 
 # List all example scripts
-EXAMPLE_SCRIPTS=$(find ${SCRIPT_DIR} -maxdepth 1 -type f -name '*.examples.sh' -printf '%f\n' | sort)
+EXAMPLE_SCRIPTS=$(find ${SCRIPT_DIR} -maxdepth 1 -type f -name '*.examples.*' -printf '%f\n' | sort)
 EXAMPLE_COUNT=0
 for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     # Calculate the shutil from the example file.
-    SHUTIL=$(echo ${EXAMPLE} | sed -e 's/\.examples\.sh//g')
+    SHUTIL=$(echo ${EXAMPLE} | sed -e 's/\.examples\..*$//g')
     # Write the .md
     # Write title
     echo "## ${SHUTIL}"                                         >> ${RM_USAGE}
@@ -92,8 +93,15 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     echo "#### Examples"                                        >> ${RM_USAGE}
     gen_toc_entry "Examples" 4 $EXAMPLE_COUNT
     echo '```sh'                                                >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 \
-                | sed -e 's/^set +v$//g'                        >> ${RM_USAGE}
+    set +e
+    echo "$EXAMPLE" | grep -Pq '.sh$'
+    if [ $? -eq 0 ]; then
+        PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 \
+                    | sed -e 's/^set +v$//g'                    >> ${RM_USAGE}
+    else
+        cat ${SCRIPT_DIR}/${EXAMPLE}                            >> ${RM_USAGE}
+    fi
+    set -e
     echo '```'                                                  >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
     # Increment the counter so the duplicated type/usage/example links are
