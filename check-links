@@ -21,6 +21,7 @@ usage()
     exit 1
 }
 
+# Script variables
 SCRIPT_MODE=false
 DIRECTORY="."
 
@@ -28,7 +29,6 @@ DIRECTORY="."
 while [ $# -gt 0 ]; do
     command_line_arg="$1"
     shift
-
     case "$command_line_arg" in
         -p)
             SCRIPT_MODE=true

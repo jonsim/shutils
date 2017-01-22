@@ -1,0 +1,94 @@
+#!/bin/sh
+# (c) Copyright 2017 Jonathan Simmonds
+# Simple recursive file searcher, wrapping a handful of common find/grep combos.
+set -e
+
+usage()
+{
+	echo "usage: search [-i] [-f] [-h] [path] regex"
+    echo ""
+    echo "Simple recursive file searcher, wrapping a handful of common find/grep"
+    echo "combos and decorating the output."
+    echo ""
+    echo "positional arguments:"
+    echo "  regex       Perl-style regular expression to search for. It is"
+    echo "              recommended to pass this in single quotes to prevent"
+    echo "              shell expansion/interpretation of the regex characters."
+    echo ""
+    echo "optional arguments:"
+	echo "  -i          Enable case-insensitive searching."
+	echo "  -f          Performs the search on the names of files rather than on"
+    echo "              their contents."
+	echo "  -h, --help  Print this message and exit."
+    echo "  path        Optional path to perform the search in. If ommitted the"
+    echo "              current working directory is used."
+	exit 1
+}
+
+# Script variables
+SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
+FIND_MODE=false
+CASE_SENSITIVE=true
+SEARCH_TERM=""
+SEARCH_PATH=""
+
+# Handle command line
+while [ $# -gt 0 ]; do
+    command_line_arg="$1"
+    shift
+    case $command_line_arg in
+        -i)
+            CASE_SENSITIVE=false
+            ;;
+        -f)
+            FIND_MODE=true
+            ;;
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            if [ -n "$SEARCH_TERM" ]; then
+                # If the search term has already been set, then we must have
+                # a path present and must have passed the path into the search
+                # term. Save the term as the path and update the term to the new
+                # value (effectively 'shifting' the variables along one)!
+                if [ -n "$SEARCH_PATH" ]; then
+                    usage
+                else
+                    SEARCH_PATH=$SEARCH_TERM
+                    SEARCH_TERM=$command_line_arg
+                fi
+            else
+                SEARCH_TERM=$command_line_arg
+            fi
+            ;;
+    esac
+done
+if [ -z "$SEARCH_TERM" ]; then
+    usage
+fi
+if [ -z "$SEARCH_PATH" ]; then
+    SEARCH_PATH="."
+fi
+
+# Perform the search
+if [ $FIND_MODE = true ]; then
+    if [ $CASE_SENSITIVE = false ]; then
+        FIND_ARGS="-iregex"
+    else
+        FIND_ARGS="-regex"
+    fi
+    find "$SEARCH_PATH" \( -path '*/.git' -o -path '*/.svn' \) -prune -o $FIND_ARGS ".*${SEARCH_TERM}.*" -print
+else
+    # r (recursive), n (print line num), s (no error messages), H (print filename),
+    # Z (NUL terminate filenames), I (ignore binary files), P (Perl regex)
+    GREP_ARGS="-rnsHZIP"
+    if [ $CASE_SENSITIVE = false ]; then
+        GREP_ARGS="${GREP_ARGS}i"
+    fi
+    grep --color=never $GREP_ARGS --exclude-dir=".svn" --exclude-dir=".git" "$SEARCH_TERM" "$SEARCH_PATH" | \
+        python "${SCRIPT_DIR}/printers/decorategrep.py" -t "$SEARCH_TERM"
+fi
