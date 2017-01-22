@@ -78,6 +78,9 @@ fi
 if [ ! -t 1 ]; then
     PRINTER_ARGS="-p"
 fi
+if [ $CASE_SENSITIVE = false ]; then
+    PRINTER_ARGS="${PRINTER_ARGS} -i"
+fi
 
 # Perform the search
 if [ $FIND_MODE = true ]; then

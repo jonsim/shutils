@@ -108,16 +108,20 @@ class SearchResult(object):
             string = string + ' ' * (min_width - curlen)
         return string
 
-    def format_result(self, decorate, term, min_width=None, max_width=None):
+    def format_result(self, term, ignore_case, decorate, min_width=None, max_width=None):
         """Formats the result column, decorating, truncating and padding it.
 
         Args:
-            decorate:           bool whether or not to decorate the string with
-                ANSI escape codes (e.g. for terminal display).
-            min_width:          int minimum character width to draw the column
-                to. Additional width will be made up by padding.
-            max_width:          int maximum character width to draw the column
-                to. Additional width will be removed by truncating.
+            term:           string search term used to produce this result. May be
+                None if unknown, only used for highlighting the result.
+            ignore_case:    bool whether or not to ignore the case when
+                highlighting the match. Only meaningful if term is not None.
+            decorate:       bool whether or not to decorate the string with ANSI
+                escape codes (e.g. for terminal display).
+            min_width:      int minimum character width to draw the column to.
+                Additional width will be made up by padding.
+            max_width:      int maximum character width to draw the column to.
+                Additional width will be removed by truncating.
 
         Returns:
             The formatted string.
@@ -125,6 +129,7 @@ class SearchResult(object):
         import re
         if not self.result:
             return ''
+        re_flags = re.IGNORECASE if ignore_case else 0
         string = self.result
         # If too short, right pad
         if min_width and len(string) < min_width:
@@ -133,7 +138,7 @@ class SearchResult(object):
         if max_width and len(string) > max_width:
             # If we've been given the search truncate intelligently, trying to
             # retain at least one match. Otherwise just truncate from the right
-            match = re.search(term, string) if term else None
+            match = re.search(term, string, flags=re_flags) if term else None
             start_pos = match.start(0) - 10 if match and match.start(0) > 10 else 0
             end_pos = start_pos + max_width
             if end_pos > len(string):
@@ -153,7 +158,7 @@ class SearchResult(object):
         # Return, decorating if necessary
         if decorate and term:
             # Highlight search term
-            matches = re.split('(' + term + ')', string)
+            matches = re.split('(' + term + ')', string, flags=re_flags)
             for i in range(1, len(matches), 2):
                 matches[i] = ansi_decorate(matches[i], ANSI.BOLD, ANSI.FG_RED)
             string = ''.join(matches)
@@ -173,4 +178,4 @@ class SearchResultsMax(object):
         self.lineno_len = len(str(lineno)) + 1 if lineno else None
         self.fileinfo_len = max([len(r.format_fileinfo(False, \
                 min_lineno_width=self.lineno_len)) for r in search_results])
-        self.fresult_len = max([len(r.format_result(False, None)) for r in search_results])
+        self.fresult_len = max([len(r.format_result(None, None, False)) for r in search_results])

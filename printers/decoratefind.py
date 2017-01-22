@@ -31,13 +31,15 @@ def search_results_from_find(output):
             results.append(SearchResult(None, None, None, split))
     return results
 
-def print_result(result, term, decorate, console_width):
+def print_result(result, term, ignore_case, decorate, console_width):
     """Prints the SearchResult to stdout.
 
     Args:
         result:         SearchResult object to print.
         term:           string search term used to produce this result. May be
             None if unknown.
+        ignore_case:    bool whether or not to ignore the case when highlighting
+            the match. Only meaningful if term is not None.
         decorate:       bool whether or not to decorate the string with ANSI
             escape codes (e.g. for terminal display).
         console_width:  int max character width the current console is able to
@@ -48,15 +50,17 @@ def print_result(result, term, decorate, console_width):
         None
     """
     max_width = console_width if MINIMISE_RESULT else None
-    print result.format_result(decorate, term, max_width=max_width)
+    print result.format_result(term, ignore_case, decorate, max_width=max_width)
 
-def print_results(results, term, decorate):
+def print_results(results, term, ignore_case, decorate):
     """Prints all the SearchResults to stdout.
 
     Args:
         results: list of SearchResult objects to print.
         term:           string search term used to produce this result. May be
             None if unknown.
+        ignore_case:    bool whether or not to ignore the case when highlighting
+            the match. Only meaningful if term is not None.
         decorate:       bool whether or not to decorate the string with ANSI
             escape codes (e.g. for terminal display).
 
@@ -65,7 +69,7 @@ def print_results(results, term, decorate):
     """
     console_width, console_height = console_size()
     for result in results:
-        print_result(result, term, decorate, console_width)
+        print_result(result, term, ignore_case, decorate, console_width)
 
 def main():
     """Main method."""
@@ -84,6 +88,10 @@ def main():
                         help='The search term used in generating the output. This is '
                         'optional, it is only used for highlighting the matches in '
                         'the results.')
+    parser.add_argument('-i', dest='ignore_case', action='store_const', const=True,
+                        default=False,
+                        help='Enable case-insensitive searching. Only meaningful if '
+                        'the search term is provided (-t).')
     args = parser.parse_args()
 
     results = []
@@ -94,7 +102,7 @@ def main():
     else:
         results = search_results_from_find(sys.stdin.read())
     if results:
-        print_results(results, args.term, not args.script_mode)
+        print_results(results, args.term, args.ignore_case, not args.script_mode)
 
 
 # Entry point.
