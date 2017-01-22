@@ -24,6 +24,10 @@
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
+  - [xwinid](#xwinid)
+    - [Type](#type-5)
+    - [Usage](#usage-5)
+    - [Examples](#examples-5)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -194,5 +198,29 @@ printers/decoratefind.py:16  def search_results_from_find(output):
 search -f -i 'e\.md'
 ./readme-gen/readme-usage.md
 ./README.md
+```
+
+## xwinid
+#### Type
+POSIX shell script
+
+#### Usage
+```
+usage: xwinid [window-name]
+
+Tiny wrapper on top of xwininfo to grab just the Window ID in decimal.
+
+positional arguments:
+  window-name     Optional name of the window to query. If ommitted the
+                  cursor will be used to select the window to query.
+
+optional arguments:
+  -h, --help  Print this message and exit.
+```
+
+#### Examples
+```sh
+xwinid compiz
+29360135
 ```
 

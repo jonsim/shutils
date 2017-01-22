@@ -1,0 +1,46 @@
+#!/bin/sh
+# (c) Copyright 2017 Jonathan Simmonds
+# Tiny wrapper on top of xwininfo to grab just the Window ID in decimal.
+# This is only really useful if you are scripting a windowing utility as
+# xwininfo does not offer a machine readable output form.
+set -e
+
+usage()
+{
+    echo "usage: xwinid [window-name]"
+    echo ""
+    echo "Tiny wrapper on top of xwininfo to grab just the Window ID in decimal."
+    echo ""
+    echo "positional arguments:"
+    echo "  window-name     Optional name of the window to query. If ommitted the"
+    echo "                  cursor will be used to select the window to query."
+    echo ""
+    echo "optional arguments:"
+    echo "  -h, --help  Print this message and exit."
+    exit 1
+}
+
+# Script variables
+XWINARGS=""
+SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
+
+# Handle command line
+while [ $# -gt 0 ]; do
+    command_line_arg="$1"
+    shift
+    case "$command_line_arg" in
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            XWINARGS="-name $command_line_arg"
+            ;;
+    esac
+done
+
+# Actual implementation
+XID=$(xwininfo -int ${XWINARGS} | grep -Po "Window id: [0-9]+" | grep -Po "[0-9]+$")
+echo $XID
