@@ -81,7 +81,8 @@ if [ $FIND_MODE = true ]; then
     else
         FIND_ARGS="-regex"
     fi
-    find "$SEARCH_PATH" \( -path '*/.git' -o -path '*/.svn' \) -prune -o $FIND_ARGS ".*${SEARCH_TERM}.*" -print
+    find "$SEARCH_PATH" \( -path '*/.git' -o -path '*/.svn' \) -prune -o $FIND_ARGS ".*${SEARCH_TERM}.*" -print0 | \
+        python "${SCRIPT_DIR}/printers/decoratefind.py" -t "${SEARCH_TERM}"
 else
     # r (recursive), n (print line num), s (no error messages), H (print filename),
     # Z (NUL terminate filenames), I (ignore binary files), P (Perl regex)
