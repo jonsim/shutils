@@ -1,4 +1,5 @@
 # Table of Contents
+ - [shutils](#shutils)
  - [Installation](#installation)
  - [License](#license)
  - [Documentation](#documentation)

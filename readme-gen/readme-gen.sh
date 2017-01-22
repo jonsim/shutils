@@ -48,6 +48,7 @@ fi
 
 # Generate table of contents
 echo "# Table of Contents"   > ${RM_TOC}
+gen_toc_entry "shutils" "1"
 gen_toc_entry "Installation" "1"
 gen_toc_entry "License" "1"
 gen_toc_entry "Documentation" "1"
