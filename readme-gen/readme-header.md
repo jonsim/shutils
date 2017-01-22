@@ -8,3 +8,6 @@ few Python files to. All of these have been written with Python 2.7.
 # Installation
 TODO
 
+# License
+All files are licensed under the MIT license.
+

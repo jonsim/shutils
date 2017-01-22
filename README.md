@@ -1,3 +1,27 @@
+# Table of Contents
+- [Installation](#)
+- [Documentation](#)
+  - [b2r](#)
+    - [Type](#)
+    - [Usage](#)
+    - [Examples](#)
+  - [check-links](#)
+    - [Type](#)
+    - [Usage](#)
+    - [Examples](#)
+  - [d2h](#)
+    - [Type](#)
+    - [Usage](#)
+    - [Examples](#)
+  - [h2d](#)
+    - [Type](#)
+    - [Usage](#)
+    - [Examples](#)
+  - [search](#)
+    - [Type](#)
+    - [Usage](#)
+    - [Examples](#)
+
 # shutils
 Collection of my (mostly) sh utils. Where not possible to use sh, bash has been
 used instead, but a preference for sh has been made where possible. There are a
@@ -7,6 +31,9 @@ few Python files to. All of these have been written with Python 2.7.
 
 # Installation
 TODO
+
+# License
+All files are licensed under the MIT license.
 
 # Documentation
 ## b2r
@@ -154,14 +181,12 @@ optional arguments:
 
 #### Examples
 ```sh
-./search printers 'def search_result.+:'
+search printers 'def search_result.+:'
 printers/decorategrep.py:33  def search_result_from_grep(output):
 printers/decoratefind.py:16  def search_results_from_find(output):
 
-./search -f -i 'e\.md'
+search -f -i 'e\.md'
 ./readme-gen/readme-usage.md
 ./README.md
 ```
 
-# License
-All files are licensed under the MIT license.

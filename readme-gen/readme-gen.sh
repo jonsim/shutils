@@ -7,6 +7,7 @@ set -e
 SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
 SHUTIL_DIR="${SCRIPT_DIR}/.."
 RM_HEADER="${SCRIPT_DIR}/readme-header.md"
+RM_TOC="${SCRIPT_DIR}/readme-toc.md"
 RM_USAGE="${SCRIPT_DIR}/readme-usage.md"
 RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
 RM_FINAL="${SHUTIL_DIR}/README.md"
@@ -32,6 +33,11 @@ if [ $# -ne 0 ]; then
     usage
 fi
 
+# Generate table of contents
+echo "# Table of Contents"   > ${RM_TOC}
+echo "- [Installation](#)"  >> ${RM_TOC}
+echo "- [Documentation](#)" >> ${RM_TOC}
+
 # Generate usage readme
 echo "# Documentation"  > ${RM_USAGE}
 
@@ -42,13 +48,16 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     SHUTIL=$(echo ${EXAMPLE} | sed -e 's/\.examples\.sh//g')
     # Write the .md
     # Write title
-    echo "## ${SHUTIL}"                                        >> ${RM_USAGE}
+    echo "## ${SHUTIL}"                                         >> ${RM_USAGE}
+    echo "  - [${SHUTIL}](#)"                                   >> ${RM_TOC}
     # Write type
     echo "#### Type"                                            >> ${RM_USAGE}
+    echo "    - [Type](#)"                                      >> ${RM_TOC}
     file --b ${SHUTIL_DIR}/${SHUTIL} | sed -e 's/,.*$//'        >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
     # Write usage
     echo "#### Usage"                                           >> ${RM_USAGE}
+    echo "    - [Usage](#)"                                     >> ${RM_TOC}
     echo '```'                                                  >> ${RM_USAGE}
     set +e
     PATH=${SHUTIL_DIR}:${PATH} ${SHUTIL} -h                     >> ${RM_USAGE}
@@ -57,11 +66,15 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     echo ""                                                     >> ${RM_USAGE}
     # Write examples
     echo "#### Examples"                                        >> ${RM_USAGE}
+    echo "    - [Examples](#)"                                  >> ${RM_TOC}
     echo '```sh'                                                >> ${RM_USAGE}
-    PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 | sed -e 's/^set +v$//g' >> ${RM_USAGE}
+    PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 \
+                | sed -e 's/^set +v$//g'                        >> ${RM_USAGE}
     echo '```'                                                  >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
 done
 
+echo "" >> ${RM_TOC}
+
 # Merge header and usage into destination readme.
-cat ${RM_HEADER} ${RM_USAGE} ${RM_FOOTER} > ${RM_FINAL}
+cat ${RM_TOC} ${RM_HEADER} ${RM_USAGE} ${RM_FOOTER} > ${RM_FINAL}
