@@ -12,6 +12,7 @@ RM_USAGE="${SCRIPT_DIR}/readme-usage.md"
 RM_FOOTER="${SCRIPT_DIR}/readme-footer.md"
 RM_FINAL="${SHUTIL_DIR}/README.md"
 
+# Output usage information and exit.
 usage()
 {
     echo "usage: readme-gen.sh [-h]"
@@ -29,14 +30,27 @@ usage()
     exit 1
 }
 
+# Generate a TOC entry line.
+# Args:
+#   $1  the name of the TOC entry to generate.
+#   $2  the level of the TOC entry to generate.
+gen_toc_entry()
+{
+    ENTRY_NAME="$1"
+    LINK_NAME=$(echo ${ENTRY_NAME} | tr '[:upper:]' '[:lower:]')
+    printf "%${2}s" >> ${RM_TOC}
+    echo "- [${ENTRY_NAME}](#${LINK_NAME})" >> ${RM_TOC}
+}
+
 if [ $# -ne 0 ]; then
     usage
 fi
 
 # Generate table of contents
 echo "# Table of Contents"   > ${RM_TOC}
-echo "- [Installation](#)"  >> ${RM_TOC}
-echo "- [Documentation](#)" >> ${RM_TOC}
+gen_toc_entry "Installation" "1"
+gen_toc_entry "License" "1"
+gen_toc_entry "Documentation" "1"
 
 # Generate usage readme
 echo "# Documentation"  > ${RM_USAGE}
@@ -49,15 +63,15 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     # Write the .md
     # Write title
     echo "## ${SHUTIL}"                                         >> ${RM_USAGE}
-    echo "  - [${SHUTIL}](#)"                                   >> ${RM_TOC}
+    gen_toc_entry "${SHUTIL}" "2"
     # Write type
     echo "#### Type"                                            >> ${RM_USAGE}
-    echo "    - [Type](#)"                                      >> ${RM_TOC}
+    gen_toc_entry "Type" "4"
     file --b ${SHUTIL_DIR}/${SHUTIL} | sed -e 's/,.*$//'        >> ${RM_USAGE}
     echo ""                                                     >> ${RM_USAGE}
     # Write usage
     echo "#### Usage"                                           >> ${RM_USAGE}
-    echo "    - [Usage](#)"                                     >> ${RM_TOC}
+    gen_toc_entry "Usage" "4"
     echo '```'                                                  >> ${RM_USAGE}
     set +e
     PATH=${SHUTIL_DIR}:${PATH} ${SHUTIL} -h                     >> ${RM_USAGE}
@@ -66,7 +80,7 @@ for EXAMPLE in ${EXAMPLE_SCRIPTS}; do
     echo ""                                                     >> ${RM_USAGE}
     # Write examples
     echo "#### Examples"                                        >> ${RM_USAGE}
-    echo "    - [Examples](#)"                                  >> ${RM_TOC}
+    gen_toc_entry "Examples" "4"
     echo '```sh'                                                >> ${RM_USAGE}
     PATH=${SHUTIL_DIR}:${PATH} sh ${SCRIPT_DIR}/${EXAMPLE} 2>&1 \
                 | sed -e 's/^set +v$//g'                        >> ${RM_USAGE}
