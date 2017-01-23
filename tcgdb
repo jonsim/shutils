@@ -23,6 +23,7 @@ usage()
 
 # Script variables
 SESSIONNAME="tcgdb-session"
+DEBUGGER="cgdb"
 DBG_TARGET=""
 GDB_ARGS=""
 FULL_CMDLINE="$0 $@"
@@ -63,6 +64,6 @@ else
     # If so, take control of it and execute cgdb in it.
     tmux split-window -h -p 50 "gdbserver :12345 ${DBG_TARGET}"
     tmux select-pane -t 0
-    cgdb -- -ex "target remote localhost:12345" ${GDB_ARGS}
+    $DEBUGGER -ex "target remote localhost:12345" ${GDB_ARGS}
     tmux kill-session -t "${SESSIONNAME}"
 fi
