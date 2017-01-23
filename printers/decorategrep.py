@@ -53,22 +53,25 @@ def search_result_from_grep(output):
     result = line_split[1]
     return SearchResult(dirname, basename, lineno, result)
 
-def print_result(result, term, ignore_case, decorate, console_width, results_max):
+def print_result(result, term, ignore_case, decorate, console_width, results_max, condense_result=MINIMISE_RESULT):
     """Prints the SearchResult to stdout.
 
     Args:
-        result:         SearchResult object to print.
-        term:           string search term used to produce this result. May be
-            None if unknown.
-        ignore_case:    bool whether or not to ignore the case when highlighting
-            the match. Only meaningful if term is not None.
-        decorate:       bool whether or not to decorate the string with ANSI
+        result:             SearchResult object to print.
+        term:               string search term used to produce this result. May
+            be None if unknown.
+        ignore_case:        bool whether or not to ignore the case when
+            highlighting the match. Only meaningful if term is not None.
+        decorate:           bool whether or not to decorate the string with ANSI
             escape codes (e.g. for terminal display).
-        console_width:  int max character width the current console is able to
-            display for output. Attempts will be made to truncate or fit to this
-            if possible (based on 'minimisation' global constants).
-        results_max:    SearchResultsMax object containing the maxima
+        console_width:      int max character width the current console is able
+            to display for output. Attempts will be made to truncate or fit to
+            this if possible (based on 'minimisation' global constants).
+        results_max:        SearchResultsMax object containing the maxima
             information from all processed SearchResults.
+        condense_result:    Whether to allow 'minimising' the result column if
+            the file-info and result columns cannot otherwise be printed on a
+            single line.
 
     Returns:
         None
@@ -84,7 +87,7 @@ def print_result(result, term, ignore_case, decorate, console_width, results_max
     min_fileinfo_width = min(MAX_MINIMISATION, results_max.fileinfo_len)
     min_fresult_width = min(MAX_MINIMISATION, results_max.fresult_len)
     # If we still haven't got a result but can minimise fileinfo, try to print
-    if not (fileinfo and result) and MINIMISE_FILEINFO and not MINIMISE_RESULT:
+    if not (fileinfo and result) and MINIMISE_FILEINFO and not condense_result:
         # Does being allowed to minimise the fileinfo even help?
         if results_max.fresult_len <= console_width - min_fileinfo_width - MIN_COL_SPACING:
             fileinfo = result.format_fileinfo(decorate, \
@@ -93,7 +96,7 @@ def print_result(result, term, ignore_case, decorate, console_width, results_max
                             min_lineno_width=results_max.lineno_len)
             fresult = result.format_result(term, ignore_case, decorate)
     # If we still haven't got a result but can minimise result, try to print
-    if not (fileinfo and result) and MINIMISE_RESULT and not MINIMISE_FILEINFO:
+    if not (fileinfo and result) and condense_result and not MINIMISE_FILEINFO:
         # Does being allowed to minimise the result even help?
         if results_max.fileinfo_len <= console_width - min_fresult_width - MIN_COL_SPACING:
             fileinfo = result.format_fileinfo(decorate, \
@@ -102,7 +105,7 @@ def print_result(result, term, ignore_case, decorate, console_width, results_max
             fresult = result.format_result(term, ignore_case, decorate, \
                             max_width=console_width - results_max.fileinfo_len - MIN_COL_SPACING)
     # If we still haven't got a result but can minimise both sides, try to print
-    if not (fileinfo and result) and MINIMISE_FILEINFO and MINIMISE_RESULT:
+    if not (fileinfo and result) and MINIMISE_FILEINFO and condense_result:
         # Does being allowed to minimise both sides even help?
         if console_width >= min_fileinfo_width + MIN_COL_SPACING + min_fresult_width:
             flx_fileinfo_width = min(term / 3, results_max.fileinfo_len)
@@ -121,17 +124,20 @@ def print_result(result, term, ignore_case, decorate, console_width, results_max
                         max_width=console_width if FIT_TO_CONSOLE else None) + '\n'
     print fileinfo + fresult
 
-def print_results(results, term, ignore_case, decorate):
+def print_results(results, term, ignore_case, decorate, condense_result=MINIMISE_RESULT):
     """Prints all the SearchResults to stdout.
 
     Args:
-        results: list of SearchResult objects to print.
-        term:           string search term used to produce this result. May be
-            None if unknown.
-        ignore_case:    bool whether or not to ignore the case when highlighting
-            the match. Only meaningful if term is not None.
+        results:            list of SearchResult objects to print.
+        term:               string search term used to produce this result. May
+            be None if unknown.
+        ignore_case:        bool whether or not to ignore the case when
+            highlighting the match. Only meaningful if term is not None.
         decorate:       bool whether or not to decorate the string with ANSI
             escape codes (e.g. for terminal display).
+        condense_result:    Whether to allow 'minimising' the result column if
+            the file-info and result columns cannot otherwise be printed on a
+            single line.
 
     Returns:
         None
@@ -139,7 +145,8 @@ def print_results(results, term, ignore_case, decorate):
     console_width, console_height = console_size()
     max_results = SearchResultsMax(results)
     for result in results:
-        print_result(result, term, ignore_case, decorate, console_width, max_results)
+        print_result(result, term, ignore_case, decorate, console_width, max_results,
+                     condense_result=condense_result)
 
 def main():
     """Main method."""
@@ -161,7 +168,13 @@ def main():
     parser.add_argument('-i', dest='ignore_case', action='store_const', const=True,
                         default=False,
                         help='Enable case-insensitive searching. Only meaningful if '
-                        'the search term is provided (-t).')
+                        'the search term (-t) is provided.')
+    parser.add_argument('-v', dest='full_result', action='store_const', const=True,
+                        default=False,
+                        help='Enable verbose, full replication of the result column, '
+                        'even if it means taking multiple lines per match (by '
+                        'default the result will be condensed to keep one line per '
+                        'match if possible).')
     args = parser.parse_args()
 
     results = []
@@ -173,7 +186,8 @@ def main():
         for line in sys.stdin:
             results.append(search_result_from_grep(line))
     if results:
-        print_results(results, args.term, args.ignore_case, not args.script_mode)
+        print_results(results, args.term, args.ignore_case, not args.script_mode,
+                      not args.full_result)
 
 
 # Entry point.

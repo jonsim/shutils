@@ -174,7 +174,7 @@ POSIX shell script
 
 #### Usage
 ```
-usage: search [-i] [-f] [-h] [path] regex
+usage: search [-i] [-f] [-v] [-h] [path] regex
 
 Simple recursive file searcher, wrapping a handful of common find/grep
 combos and decorating the output. Ignores .git and .svn directories.
@@ -190,6 +190,10 @@ optional arguments:
   -i          Enable case-insensitive searching.
   -f          Performs the search on the names of files rather than on
               their contents.
+  -v          Enable verbose, full replication of the result column,
+              even if it means taking multiple lines per match (by
+              default the result will be condensed to keep one line per
+              match if possible).
   -h, --help  Print this message and exit.
 ```
 
