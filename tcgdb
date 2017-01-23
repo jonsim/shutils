@@ -5,7 +5,7 @@ set -e
 
 usage()
 {
-	echo "usage: tcgdb [-h] program [gdb-arg [gdb-arg [...]]]"
+    echo "usage: tcgdb [-h] program [gdb-arg [gdb-arg [...]]]"
     echo ""
     echo "Basic wrapper on top of cgdb to separate program output into a tmux"
     echo "panel. The Rolls Royce of terminal debuggers."
@@ -17,8 +17,8 @@ usage()
     echo "              tcgdb immediately exits these commands are likely invalid."
     echo ""
     echo "optional arguments:"
-	echo "  -h, --help  Print this message and exit."
-	exit 1
+    echo "  -h, --help  Print this message and exit."
+    exit 1
 }
 
 # Script variables

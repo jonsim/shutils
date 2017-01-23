@@ -5,7 +5,7 @@ set -e
 
 usage()
 {
-	echo "usage: search [-i] [-f] [-v] [-h] [path] regex"
+    echo "usage: search [-i] [-f] [-v] [-h] [path] regex"
     echo ""
     echo "Simple recursive file searcher, wrapping a handful of common find/grep"
     echo "combos and decorating the output. Ignores .git and .svn directories."
@@ -18,15 +18,15 @@ usage()
     echo "              shell expansion/interpretation of the regex characters."
     echo ""
     echo "optional arguments:"
-	echo "  -i          Enable case-insensitive searching."
-	echo "  -f          Performs the search on the names of files rather than on"
+    echo "  -i          Enable case-insensitive searching."
+    echo "  -f          Performs the search on the names of files rather than on"
     echo "              their contents."
     echo "  -v          Enable verbose, full replication of the result column,"
     echo "              even if it means taking multiple lines per match (by"
     echo "              default the result will be condensed to keep one line per"
     echo "              match if possible)."
-	echo "  -h, --help  Print this message and exit."
-	exit 1
+    echo "  -h, --help  Print this message and exit."
+    exit 1
 }
 
 # Script variables
