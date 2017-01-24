@@ -28,10 +28,14 @@
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-6)
     - [Usage](#usage-6)
     - [Examples](#examples-6)
+  - [xwinid](#xwinid)
+    - [Type](#type-7)
+    - [Usage](#usage-7)
+    - [Examples](#examples-7)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -232,6 +236,36 @@ optional arguments:
 #### Examples
 ```sh
 tcgdb someapp.out
+```
+
+## wcz
+#### Type
+POSIX shell script
+
+#### Usage
+```
+usage: wcz [-s] [-h]
+
+Basic wrapper on top of wc which reads NUL-terminated filenames from
+stdin until EOF when it prints a line- (using wc) and file-count.
+
+optional arguments:
+  -s          Print only the final summary line, not the full line-count.
+  -h, --help  Print this message and exit.
+```
+
+#### Examples
+```sh
+find printers -name '*.py' -print0 | wcz
+  195 printers/decorategrep.py
+   21 printers/console.py
+  181 printers/search_result.py
+  110 printers/decoratefind.py
+   74 printers/ansi_decorate.py
+581 lines in 5 files
+
+git ls-files -z | wcz -s
+1518 lines in 26 files
 ```
 
 ## xwinid

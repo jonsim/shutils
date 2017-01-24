@@ -1,0 +1,62 @@
+#!/bin/sh
+# (c) Copyright 2017 Jonathan Simmonds
+# Basic wrapper on top of wc to which reads NUL-terminated filenames from stdin
+# until EOF when it prints a linecount and a summary line.
+set -e
+
+usage()
+{
+    echo "usage: wcz [-s] [-h]"
+    echo ""
+    echo "Basic wrapper on top of wc which reads NUL-terminated filenames from"
+    echo "stdin until EOF when it prints a line- (using wc) and file-count."
+    echo ""
+    echo "optional arguments:"
+    echo "  -s          Print only the final summary line, not the full line-count."
+    echo "  -h, --help  Print this message and exit."
+    exit 1
+}
+
+# Script variables
+SCRATCH_FILE_1="/tmp/wcz.scratch.1"
+SCRATCH_FILE_2="/tmp/wcz.scratch.2"
+VERBOSE=true
+
+# Handle command line
+while [ $# -gt 0 ]; do
+    command_line_arg="$1"
+    shift
+    case $command_line_arg in
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        -s)
+            VERBOSE=false
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+# Actual implementation...
+# Pull stdin to a file
+cat > "${SCRATCH_FILE_1}"
+# Count all the lines
+wc -l --files0-from "${SCRATCH_FILE_1}" > "${SCRATCH_FILE_2}"
+LINECOUNT=$(tail -n1 "${SCRATCH_FILE_2}" | sed -e 's/^ *\([0-9]\+\) .*/\1/')
+if [ -z "$LINECOUNT" ]; then
+    LINECOUNT="0"
+fi
+# Count all the files
+FILECOUNT=$(cat ${SCRATCH_FILE_1} | sed -e 's/[^\x00]//g' | wc -m)
+# Output the result (minus wc's summary line)
+if [ $VERBOSE = true ]; then
+    head -n -1 "${SCRATCH_FILE_2}"
+fi
+echo "$LINECOUNT lines in $FILECOUNT files"
+# Cleanup
+rm -f "${SCRATCH_FILE_1}" "${SCRATCH_FILE_2}"
