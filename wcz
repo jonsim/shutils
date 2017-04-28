@@ -51,7 +51,7 @@ LINECOUNT=$(tail -n1 "${SCRATCH_FILE_2}" | sed -e 's/^ *\([0-9]\+\) .*/\1/')
 if [ -z "$LINECOUNT" ]; then
     LINECOUNT="0"
 fi
-# Count all the files
+# Count all the files (exactly one NUL byte will be printed per file)
 FILECOUNT=$(cat ${SCRATCH_FILE_1} | sed -e 's/[^\x00]//g' | wc -m)
 # Output the result (minus wc's summary line)
 if [ $VERBOSE = true ]; then
