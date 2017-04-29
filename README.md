@@ -24,18 +24,22 @@
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
-  - [tcgdb](#tcgdb)
+  - [tabulate](#tabulate)
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
-  - [wcz](#wcz)
+  - [tcgdb](#tcgdb)
     - [Type](#type-6)
     - [Usage](#usage-6)
     - [Examples](#examples-6)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-7)
     - [Usage](#usage-7)
     - [Examples](#examples-7)
+  - [xwinid](#xwinid)
+    - [Type](#type-8)
+    - [Usage](#usage-8)
+    - [Examples](#examples-8)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -212,6 +216,86 @@ search -f -i 'e\.md'
 ./README.md
 ```
 
+## tabulate
+#### Type
+Python script
+
+#### Usage
+```
+usage: tabulate [-h] [-r [ROW_DELIM]] [-c [COL_DELIM]] [-H] [-b] [-f [FORMAT]]
+                [-s [{minimal,basic,basic-grid,fancy,fancy-grid,html}]]
+                [file]
+
+Takes input on stdin, splits it on a delimiter and tabulates it into rows and
+columns.
+
+positional arguments:
+  file                  The file to read. May be ommitted to read from stdin.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r [ROW_DELIM]        Delimiter to split rows on. Defaults to '\n'.
+  -c [COL_DELIM]        Delimiter to split columns on. Defaults to ' '.
+  -H                    Use the first row as headers. By default no headers
+                        are drawn.
+  -b                    Surround the table with a border (providing the style
+                        supports it). "minimal" and "html" styles do not
+                        support this. By default no border is drawn.
+  -f [FORMAT]           Formatting to apply to the columns. This should be a
+                        comma-separated list of format strings for each column
+                        (any columns not covered will be removed). Format
+                        strings may contain a number (representing the maximum
+                        column width) and/or a character (representing the
+                        column alignment, 'c' for centered, 'l' for left, 'r'
+                        for right). E.g. "10r,15,c". By default all columns
+                        are unlimited width, left aligned.
+  -s [{minimal,basic,basic-grid,fancy,fancy-grid,html}]
+                        Style of table to draw. Defaults to "basic". "minimal"
+                        uses purely spaces to align the elements with an
+                        underline for headers. "basic" separates columns with
+                        a vertical bar and the header with an underline.
+                        "basic-grid" separates columns with a vertical bar and
+                        all rows with a horizontal bar, using a heavier bar
+                        for headers. "fancy" is similar to basic but using
+                        non-ASCII characters for the decorations. "fancy-grid"
+                        is similar to basic-grid but using non-ASCII
+                        characters for the decoration. "html" produces a HTML
+                        table element.
+```
+
+#### Examples
+```sh
+echo "basic tabulate test\nto show\nthe  functionality" | tabulate
+basic | tabulate | test         
+to    | show     |              
+the   |          | functionality
+
+echo "basic tabulate test\nto show\nthe  functionality" | tabulate -H
+basic | tabulate | test         
+------+----------+--------------
+to    | show     |              
+the   |          | functionality
+
+tabulate -s basic-grid -H -b -f ',16c,r' -c '\t' tabulate-test.txt
++=========+==================+=====================================+
+| Header1 |     Header2      |                                     |
++=========+==================+=====================================+
+| hello   |      world       |                             foo bar |
++---------+------------------+-------------------------------------+
+|         | this is a longer | meanwhile this line is unrestricted |
+|         | and more varied  |                                     |
+|         | line limited to  |                                     |
+|         |  16 characters   |                                     |
++---------+------------------+-------------------------------------+
+| is      |        a         |                                test |
++---------+------------------+-------------------------------------+
+| of      |     tabulate     |                                     |
++---------+------------------+-------------------------------------+
+| very    |      tricky      |                                     |
++---------+------------------+-------------------------------------+
+
+```
+
 ## tcgdb
 #### Type
 POSIX shell script
@@ -265,7 +349,7 @@ find printers -name '*.py' -print0 | wcz
 581 lines in 5 files
 
 git ls-files -z | wcz -s
-1518 lines in 26 files
+2005 lines in 28 files
 ```
 
 ## xwinid
