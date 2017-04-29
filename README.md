@@ -202,9 +202,9 @@ optional arguments:
 
 #### Examples
 ```sh
-echo "world\nit's jon" | prepend "hello "
+echo "world\nits jon" | prepend "hello "
 hello world
-hello it's jon
+hello its jon
 
 echo "this is\na test" | prepend -f "hello world\n"
 hello world
