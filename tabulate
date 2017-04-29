@@ -278,9 +278,11 @@ def format_input(rows, format_str=None, default_align='l'):
 def main():
     """Main method."""
     # Handle command line
-    parser = argparse.ArgumentParser(description='Takes input on stdin, splits '
-                                     'it on a delimiter and tabulates it into '
-                                     'rows and columns.')
+    parser = argparse.ArgumentParser(description='Takes input from a file or '
+                                     'stdin, splits it into rows and columns on '
+                                     'respective delimiters and prints the '
+                                     'result in a table in a number of formats '
+                                     'and styles.')
     parser.add_argument('file', type=str, default=None, nargs='?',
                         help='The file to read. May be ommitted to read from '
                         'stdin.')
