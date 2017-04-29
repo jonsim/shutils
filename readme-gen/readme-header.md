@@ -1,7 +1,7 @@
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
 applications have been implemented either as a POSIX compliant sh script, or as
-a Python script.
+a Python script requiring at most Python 2.7.
 
 &copy; Copyright 2017 Jonathan Simmonds
 
