@@ -1,0 +1,362 @@
+#!/usr/bin/env python
+# (c) Copyright 2017 Jonathan Simmonds
+"""Script to split streamed input and reorder into a table."""
+import textwrap     # wrap
+import argparse     # ArgumentParser
+import string       # center, ljust, rjust
+import sys          # stdin, exit
+import re           # match
+
+def text_get_hbar(col_widths, position, bold=False, edges=False, fancy=False,
+                  minimal=False):
+    """Gets a horizontal bar string for box drawing.
+
+    Args:
+        col_widths: A list of int widths of each of the table's columns.
+        position:   int, position of the bar in the table. Less than 0 for a
+            top horizontal bar (e.g. the top edge), equal to 0 for a central
+            horizontal bar (e.g. a row separator) greater than 0 for a bottom
+            horizontal bar (e.g. the bottom edge).
+        bold:       bool, True to draw the horizontal bar bold.
+        edges:      bool, True to draw edging or border characters on the left
+            and right of the horizontal bar.
+        fancy:      bool, True to use Unicode box characters to draw the table,
+            False to just use ASCII characters.
+        minimal:    bool, True to use just spaces to separate columns.
+
+    Returns:
+        string to use as a horizontal bar in the requested table position.
+    """
+    # All unicode encodings from https://en.wikipedia.org/wiki/Box_Drawing.
+    f_char = ('=' if bold else '-') if not fancy else (u'\u2501' if bold else u'\u2500')
+    tl_char = '' if minimal else '+' if not fancy else u'\u250F' if bold else u'\u250C'
+    tc_char = '' if minimal else '+' if not fancy else u'\u2533' if bold else u'\u252C'
+    tr_char = '' if minimal else '+' if not fancy else u'\u2513' if bold else u'\u2510'
+    cl_char = '' if minimal else '+' if not fancy else u'\u2521' if bold else u'\u251C'
+    cc_char = '' if minimal else '+' if not fancy else u'\u2547' if bold else u'\u253C'
+    cr_char = '' if minimal else '+' if not fancy else u'\u2529' if bold else u'\u2524'
+    bl_char = '' if minimal else '+' if not fancy else u'\u2517' if bold else u'\u2514'
+    bc_char = '' if minimal else '+' if not fancy else u'\u253B' if bold else u'\u2534'
+    br_char = '' if minimal else '+' if not fancy else u'\u251B' if bold else u'\u2518'
+    if position < 0:    # Top.
+        center = f_char + tc_char + f_char
+        ledge = tl_char + f_char
+        redge = f_char + tr_char
+    elif position > 0:  # Bottom.
+        center = f_char + bc_char + f_char
+        ledge = bl_char + f_char
+        redge = f_char + br_char
+    else:               # Center.
+        center = f_char + cc_char + f_char
+        ledge = cl_char + f_char
+        redge = f_char + cr_char
+    output = center.join([f_char * width for width in col_widths])
+    if edges:
+        output = ledge + output + redge
+    return output
+
+def text_get_vbar(position, bold=False, fancy=False, minimal=False):
+    """Gets a vertical bar string for box drawing.
+
+    Args:
+        position:   int, position of the bar in the table. Less than 0 for a
+            left vertical bar (e.g. a left edge), equal to 0 for a central
+            vertical bar (e.g. a column separator) greater than 0 for a right
+            vertical bar (e.g. a right edge).
+        bold:       bool, True to draw the vertical bar bold.
+        fancy:      bool, True to use Unicode box characters to draw the table,
+            False to just use ASCII characters.
+        minimal:    bool, True to use just spaces to separate columns.
+
+    Returns:
+        string to use as a vertical bar in the requested table position.
+    """
+    # All unicode encodings from https://en.wikipedia.org/wiki/Box_Drawing.
+    char = '' if minimal else '|' if not fancy else u'\u2503' if bold else u'\u2502'
+    if position < 0:    # Left.
+        return char + ' '
+    elif position > 0:  # Right.
+        return ' ' + char
+    else:               # Center.
+        return ' ' + char + ' '
+
+def tabulate_text(rows, col_widths, headers=False, borders=False, grid=False,
+                  fancy=False, minimal=False):
+    """Returns a tabulated text string representation of a 2D list.
+
+    Args:
+        rows:       A list of lists of lists of strings. Represents a list of
+            all rows, containing a list of all cells within that row, containing
+            a list of all lines within that cell. Each row within the list of
+            rows *must* contain an equal number of cells and each cell within
+            each row *must* contain an equal number of lines. Further each line
+            within a column *must* be the same width. All of these conditions
+            can be met using the foramt_input function.
+        col_widths: A list of int widths of each of the columns. This is one of
+            the outputs of the format_input function.
+        headers:    bool, True to draw the first row as table headers,
+            separating it from the table with a horizontal bar (which will be
+            bold if using grid).
+        borders:    bool, True to draw a border around the edge of the table.
+        grid:       bool, True to separate each row with a horizontal bar.
+        fancy:      bool, True to use Unicode box characters to draw the table,
+            False to just use ASCII characters.
+        minimal:    bool, True to use just spaces to separate columns.
+
+    Returns:
+        string representation of the table.
+    """
+    # Generate all the various decorative pieces we may need. Not all of these
+    # may be required, but cache them up front.
+    rl_vbar = text_get_vbar(-1, False, fancy, minimal)
+    rc_vbar = text_get_vbar(0, False, fancy, minimal)
+    rr_vbar = text_get_vbar(1, False, fancy, minimal)
+    bl_vbar = text_get_vbar(-1, True, fancy, minimal)
+    bc_vbar = text_get_vbar(0, True, fancy, minimal)
+    br_vbar = text_get_vbar(1, True, fancy, minimal)
+    t_hbar = text_get_hbar(col_widths, -1, headers and grid, borders, fancy, minimal)
+    h_hbar = text_get_hbar(col_widths, 0, headers and grid, borders, fancy, minimal)
+    s_hbar = text_get_hbar(col_widths, 0, False, borders, fancy, minimal)
+    b_hbar = text_get_hbar(col_widths, 1, False, borders, fancy, minimal)
+    # Generate the line-by-line output.
+    output = []
+    # If drawing borders, add the top horizontal bar.
+    if borders:
+        output.append(t_hbar)
+    # Add lines for all content.
+    first_row = True
+    second_row = False
+    for row in rows:
+        # If there was a previous row, draw a line under it if drawing grid
+        # style or if drawing headers and this is the second line.
+        if second_row and (headers or grid):
+            output.append(h_hbar)
+        elif not first_row and grid:
+            output.append(s_hbar)
+        # Print the lines within the row's cells (all cells are the same height).
+        height = len(row[0])
+        for i_l in range(height):
+            c_vbar = bc_vbar if headers and grid and first_row else rc_vbar
+            line = c_vbar.join([cell[i_l] for cell in row])
+            if borders:
+                l_vbar = bl_vbar if headers and grid and first_row else rl_vbar
+                r_vbar = br_vbar if headers and grid and first_row else rr_vbar
+                line = l_vbar + line + r_vbar
+            output.append(line)
+        # Twiddle our trackers. Not sure this is any better than range(len)...
+        if second_row:
+            second_row = False
+        if first_row:
+            first_row = False
+            second_row = True
+    # If drawing borders, add the bottom horizontal bar.
+    if borders:
+        output.append(b_hbar)
+    # Connect all the lines into a single string and return.
+    return '\n'.join(output)
+
+def tabulate_html(rows, col_align, headers=False):
+    """Returns a full HTML file containing a table representing a given 2D list.
+
+    Args:
+        rows:       A list of lists of lists of strings. Represents a list of
+            all rows, containing a list of all cells within that row, containing
+            a list of all lines within that cell. Each row within the list of
+            rows *must* contain an equal number of cells. This condition can be
+            met using the foramt_input function.
+        col_align:  A list of chars representing the alignment of each of the
+            columns. This is one of the outputs of the format_input function.
+        headers:    bool, True to draw the first row as table headers.
+
+    Returns:
+        string representation of a HTML file containing the table.
+    """
+    align_map = {'c': 'center', 'l': 'left', 'r': 'right'}
+    output = []
+    # Preamble to setup the style sheet to something acceptable.
+    output.append('<html>')
+    output.append('<head>')
+    output.append('  <style>')
+    output.append('    table, th, td {')
+    output.append('      border: 1px solid black;')
+    output.append('      border-collapse: collapse;')
+    output.append('      padding: 2px 8px;')
+    output.append('      font-family: "sans-serif";')
+    output.append('    }')
+    output.append('  </style>')
+    output.append('</head>')
+    output.append('<body>')
+    output.append('<table>')
+    # Print the table elements for each row.
+    first_row = True
+    for row in rows:
+        output.append('  <tr>')
+        for cell, align in zip(row, col_align):
+            tag = 'th' if headers and first_row else 'td'
+            output.append('    <%s align=%s>' % (tag, align_map[align]))
+            for line in cell:
+                if line.strip():
+                    output.append('      ' + line.strip())
+            output.append('    </%s>' % (tag))
+        output.append('  </tr>')
+        if first_row:
+            first_row = False
+    # Postamble.
+    output.append('</table>')
+    output.append('</body>')
+    output.append('</html>')
+    return '\n'.join(output)
+
+def format_input(rows, format_str=None, default_align='l'):
+    """Processes the split input to normalize it and make it adhere to the
+    format string (if provided).
+
+    Args:
+        rows:           list of lists of strings representing a list of rows,
+            each containing a list of cells within the row. There need not be
+            the same number of columns in each row (this will be fixed by the
+            normalization process).
+        format_str:     string of the formatting to apply, or None to apply no
+            formatting. This string, if not None, should take the following
+            format:
+                ([0-9]*[clr]?,)*[0-9]*[clr]?
+            i.e. a comma separated list describing each column, made up of an
+            optional number, representing the column's maximum width, followed
+            by an optional character, representing the column's alignment. All
+            undescribed columns will be removed. By default column width is
+            unrestricted and alignment adheres to default_align.
+        default_align:  character representing the default alignment. May be
+            'l' (left align, default), 'c' (center align) or 'r' (right align).
+
+    Returns:
+        A list of lists of lists of strings. Represents a list of all rows,
+            containing a list of all cells within that row, containing a list of
+            all lines within that cell. Each row within the list of rows will
+            contain an equal number of cells and each cell within each row will
+            contain an equal number of lines. Each line within a column will be
+            the same width.
+        A list of int widths of each of the columns in rows.
+        A list of char alignment markers for each of the columns in rows.
+    """
+    if format_str is not None:
+        try:
+            col_fmts = [re.match('^([0-9]+)?([clr])?$', fmt).groups() \
+                        for fmt in format_str.split(',')]
+        except AttributeError:
+            print "ERR: Format string was invalid."
+            sys.exit(1)
+    else:
+        col_fmts = None
+    # Calculate the maximum number of columns needed in the table.
+    max_cols = len(col_fmts) if col_fmts else max([len(r) for r in rows])
+    # Ensure every row has the correct number of columns (padding with empty).
+    rows = [r[:max_cols] + [''] * (max_cols - len(r)) for r in rows]
+    # Calculate the maximum (not bounded by formatting) width of each column.
+    max_col_widths = [max([len(r[i]) for r in rows]) for i in range(max_cols)]
+    # Calculate the correct (bounded by formatting) width of each column.
+    col_widths = [int(col_fmts[i][0]) if col_fmts[i][0] is not None else \
+                  max_col_widths[i] for i in range(max_cols)] \
+                 if col_fmts else max_col_widths
+    # Calculate the alignment for each column.
+    col_align = [fmt[1] if fmt[1] else default_align for fmt in col_fmts] \
+                if col_fmts else [default_align] * max_cols
+    align_map = {'c': string.center, 'l': string.ljust, 'r': string.rjust}
+    # Apply formatting.
+    out = []
+    for row in rows:
+        # Wrap this row's text for all columns.
+        wrapped_text = [textwrap.wrap(row[i_c], col_widths[i_c]) for i_c in \
+                        range(max_cols)]
+        # Ensure all columns are the same number of lines tall.
+        height = max([len(l) for l in wrapped_text])
+        wrapped_text = [l + [''] * (height - len(l)) for l in wrapped_text]
+        # Align the lines in each column and save to the 3D output list.
+        out.append([[align_map[col_align[i_c]](l, col_widths[i_c]) for l in \
+                     wrapped_text[i_c]] for i_c in range(max_cols)])
+    return out, col_widths, col_align
+
+def main():
+    """Main method."""
+    # Handle command line
+    parser = argparse.ArgumentParser(description='Takes input on stdin, splits '
+                                     'it on a delimiter and tabulates it into '
+                                     'rows and columns.')
+    parser.add_argument('file', type=str, default=None, nargs='?',
+                        help='The file to read. May be ommitted to read from '
+                        'stdin.')
+    parser.add_argument('-r', dest='row_delim', type=str, nargs='?',
+                        const='\n', default='\n',
+                        help='Delimiter to split rows on. Defaults to \'\\n\'.')
+    parser.add_argument('-c', dest='col_delim', type=str, nargs='?',
+                        const=' ', default=' ',
+                        help='Delimiter to split columns on. Defaults to \' \'.')
+    parser.add_argument('-H', dest='row1_headers', action='store_const',
+                        const=True, default=False,
+                        help='Use the first row as headers. By default no '
+                        'headers are drawn.')
+    parser.add_argument('-b', dest='border', action='store_const',
+                        const=True, default=False,
+                        help='Surround the table with a border (providing the '
+                        'style supports it). "minimal" and "html" styles do not '
+                        'support this. By default no border is drawn.')
+    parser.add_argument('-f', dest='format', type=str, nargs='?',
+                        const=None, default=None,
+                        help='Formatting to apply to the columns. This should '
+                        'be a comma-separated list of format strings for each '
+                        'column (any columns not covered will be removed). '
+                        'Format strings may contain a number (representing the '
+                        'maximum column width) and/or a character (representing '
+                        'the column alignment, \'c\' for centered, \'l\' for '
+                        'left, \'r\' for right). E.g. "10r,15,c". By default all '
+                        'columns are unlimited width, left aligned.')
+    parser.add_argument('-s', dest='style', type=str, nargs='?',
+                        choices=['minimal', 'basic', 'basic-grid', 'fancy',
+                                 'fancy-grid', 'html'],
+                        const='basic', default='basic',
+                        help='Style of table to draw. Defaults to "basic". '
+                        '"minimal" uses purely spaces to align the elements with '
+                        'an underline for headers. "basic" separates columns with '
+                        'a vertical bar and the header with an underline. '
+                        '"basic-grid" separates columns with a vertical bar and '
+                        'all rows with a horizontal bar, using a heavier bar for '
+                        'headers. "fancy" is similar to basic but using non-ASCII '
+                        'characters for the decorations. "fancy-grid" is similar '
+                        'to basic-grid but using non-ASCII characters for the '
+                        'decoration. "html" produces a HTML table element.')
+    args = parser.parse_args()
+    col_delim = args.col_delim.decode('string_escape')
+    row_delim = args.row_delim.decode('string_escape')
+    draw_header = args.row1_headers
+    draw_border = args.border
+    draw_grid = args.style.endswith('-grid')
+    html_mode = args.style == 'html'
+    minimal_mode = args.style == 'minimal'
+    fancy_mode = args.style.startswith('fancy')
+
+    # Read raw input and undo escaped characters in it.
+    if args.file:
+        with open(args.file, 'r') as from_file:
+            raw = from_file.read()
+    else:
+        raw = sys.stdin.read()
+    raw = raw.decode('string_escape')
+    # Remove trailing newline which some files and many pipe utils append.
+    if raw[-1] == '\n':
+        raw = raw[:-1]
+
+    # Split input.
+    rows = [r.split(col_delim) for r in raw.split(row_delim)]
+
+    # Format the input.
+    rows, widths, aligns = format_input(rows, args.format)
+
+    # Tabulate.
+    if html_mode:
+        print tabulate_html(rows, aligns, draw_header)
+    else:
+        print tabulate_text(rows, widths, draw_header, draw_border, draw_grid,
+                            fancy_mode, minimal_mode)
+
+# Entry point.
+if __name__ == "__main__":
+    main()
