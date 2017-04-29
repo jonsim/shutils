@@ -20,26 +20,30 @@
     - [Type](#type-3)
     - [Usage](#usage-3)
     - [Examples](#examples-3)
-  - [search](#search)
+  - [prepend](#prepend)
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
-  - [tabulate](#tabulate)
+  - [search](#search)
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
-  - [tcgdb](#tcgdb)
+  - [tabulate](#tabulate)
     - [Type](#type-6)
     - [Usage](#usage-6)
     - [Examples](#examples-6)
-  - [wcz](#wcz)
+  - [tcgdb](#tcgdb)
     - [Type](#type-7)
     - [Usage](#usage-7)
     - [Examples](#examples-7)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-8)
     - [Usage](#usage-8)
     - [Examples](#examples-8)
+  - [xwinid](#xwinid)
+    - [Type](#type-9)
+    - [Usage](#usage-9)
+    - [Examples](#examples-9)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -176,6 +180,38 @@ echo 1234 | h2d
 4660
 ```
 
+## prepend
+#### Type
+Python script
+
+#### Usage
+```
+usage: prepend [-h] [-f] [string]
+
+Takes input on stdin and prepends a string to either each line or just the
+initial line.
+
+positional arguments:
+  string      The string to prepend.
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -f          Prepend the string to just the first line of input. By default
+              the string is prepended to each line.
+```
+
+#### Examples
+```sh
+echo "world\nit's jon" | prepend "hello "
+hello world
+hello it's jon
+
+echo "this is\na test" | prepend -f "hello world\n"
+hello world
+this is
+a test
+```
+
 ## search
 #### Type
 POSIX shell script
@@ -226,8 +262,9 @@ usage: tabulate [-h] [-r [ROW_DELIM]] [-c [COL_DELIM]] [-H] [-b] [-f [FORMAT]]
                 [-s [{minimal,basic,basic-grid,fancy,fancy-grid,html}]]
                 [file]
 
-Takes input on stdin, splits it on a delimiter and tabulates it into rows and
-columns.
+Takes input from a file or stdin, splits it into rows and columns on
+respective delimiters and prints the result in a table in a number of formats
+and styles.
 
 positional arguments:
   file                  The file to read. May be ommitted to read from stdin.
@@ -349,7 +386,7 @@ find printers -name '*.py' -print0 | wcz
 581 lines in 5 files
 
 git ls-files -z | wcz -s
-2005 lines in 28 files
+2099 lines in 31 files
 ```
 
 ## xwinid

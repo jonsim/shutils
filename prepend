@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+# (c) Copyright 2017 Jonathan Simmonds
+"""Tiny script to prepend a string to an input stream."""
+import argparse     # ArgumentParser
+import sys          # stdin, stdout
+
+def main():
+    """Main method."""
+    # Handle command line
+    parser = argparse.ArgumentParser(description='Takes input on stdin and '
+                                     'prepends a string to either each line or '
+                                     'just the initial line.')
+    parser.add_argument('string', type=str, default=None, nargs='?',
+                        help='The string to prepend.')
+    parser.add_argument('-f', dest='first_only', action='store_const', const=True,
+                        default=False,
+                        help='Prepend the string to just the first line of input. '
+                        'By default the string is prepended to each line.')
+    args = parser.parse_args()
+
+    # Read input.
+    first_line = True
+    prefix = args.string.decode("string_escape")
+    for line in sys.stdin:
+        if args.first_only:
+            if first_line:
+                sys.stdout.write(prefix + line)
+                first_line = False
+            else:
+                sys.stdout.write(line)
+        else:
+            sys.stdout.write(prefix + line)
+        sys.stdout.flush()
+
+# Entry point.
+if __name__ == "__main__":
+    main()
