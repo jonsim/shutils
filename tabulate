@@ -173,6 +173,19 @@ def tabulate_html(rows, col_align, headers=False, full=False):
     Returns:
         string representation of a HTML file containing the table.
     """
+    def auto_link(text):
+        """Automatically extracts all URLs and replace them with links.
+
+        Args:
+            text:   string to replace URLs in.
+
+        Returns:
+            A string where all the URLs have been replaced with <a hrefs>.
+        """
+        return re.sub(
+            r'(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?',
+            r'<a href="\g<0>">\g<0></a>', text)
+
     align_map = {'c': 'center', 'l': 'left', 'r': 'right'}
     output = []
     # Preamble to setup the style sheet to something acceptable.
@@ -199,7 +212,7 @@ def tabulate_html(rows, col_align, headers=False, full=False):
             output.append('    <%s align=%s>' % (tag, align_map[align]))
             for line in cell:
                 if line.strip():
-                    output.append('      ' + line.strip())
+                    output.append('      ' + auto_link(line.strip()))
             output.append('    </%s>' % (tag))
         output.append('  </tr>')
         if first_row:
