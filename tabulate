@@ -155,7 +155,7 @@ def tabulate_text(rows, col_widths, headers=False, borders=False, grid=False,
     # Connect all the lines into a single string and return.
     return '\n'.join(output)
 
-def tabulate_html(rows, col_align, headers=False):
+def tabulate_html(rows, col_align, headers=False, full=False):
     """Returns a full HTML file containing a table representing a given 2D list.
 
     Args:
@@ -167,6 +167,8 @@ def tabulate_html(rows, col_align, headers=False):
         col_align:  A list of chars representing the alignment of each of the
             columns. This is one of the outputs of the format_input function.
         headers:    bool, True to draw the first row as table headers.
+        full:       bool, True to output a full HTML document, False to output
+            just the table element.
 
     Returns:
         string representation of a HTML file containing the table.
@@ -174,18 +176,19 @@ def tabulate_html(rows, col_align, headers=False):
     align_map = {'c': 'center', 'l': 'left', 'r': 'right'}
     output = []
     # Preamble to setup the style sheet to something acceptable.
-    output.append('<html>')
-    output.append('<head>')
-    output.append('  <style>')
-    output.append('    table, th, td {')
-    output.append('      border: 1px solid black;')
-    output.append('      border-collapse: collapse;')
-    output.append('      padding: 2px 8px;')
-    output.append('      font-family: "sans-serif";')
-    output.append('    }')
-    output.append('  </style>')
-    output.append('</head>')
-    output.append('<body>')
+    if full:
+        output.append('<html>')
+        output.append('<head>')
+        output.append('  <style>')
+        output.append('    table, th, td {')
+        output.append('      border: 1px solid black;')
+        output.append('      border-collapse: collapse;')
+        output.append('      padding: 2px 8px;')
+        output.append('      font-family: "sans-serif";')
+        output.append('    }')
+        output.append('  </style>')
+        output.append('</head>')
+        output.append('<body>')
     output.append('<table>')
     # Print the table elements for each row.
     first_row = True
@@ -203,8 +206,9 @@ def tabulate_html(rows, col_align, headers=False):
             first_row = False
     # Postamble.
     output.append('</table>')
-    output.append('</body>')
-    output.append('</html>')
+    if full:
+        output.append('</body>')
+        output.append('</html>')
     return '\n'.join(output)
 
 def format_input(rows, format_str=None, default_align='l'):
@@ -313,7 +317,7 @@ def main():
                         'columns are unlimited width, left aligned.')
     parser.add_argument('-s', dest='style', type=str, nargs='?',
                         choices=['minimal', 'basic', 'basic-grid', 'fancy',
-                                 'fancy-grid', 'html'],
+                                 'fancy-grid', 'html', 'html-full'],
                         const='basic', default='basic',
                         help='Style of table to draw. Defaults to "basic". '
                         '"minimal" uses purely spaces to align the elements with '
@@ -324,14 +328,17 @@ def main():
                         'headers. "fancy" is similar to basic but using non-ASCII '
                         'characters for the decorations. "fancy-grid" is similar '
                         'to basic-grid but using non-ASCII characters for the '
-                        'decoration. "html" produces a HTML table element.')
+                        'decoration. "html" produces a HTML table element. '
+                        '"html-full" produces a standalone HTML page with the '
+                        'table on it.')
     args = parser.parse_args()
     col_delim = args.col_delim.decode('string_escape')
     row_delim = args.row_delim.decode('string_escape')
     draw_header = args.row1_headers
     draw_border = args.border
     draw_grid = args.style.endswith('-grid')
-    html_mode = args.style == 'html'
+    html_mode = args.style.startswith('html')
+    html_full_mode = args.style == 'html-full'
     minimal_mode = args.style == 'minimal'
     fancy_mode = args.style.startswith('fancy')
 
@@ -354,7 +361,7 @@ def main():
 
     # Tabulate.
     if html_mode:
-        print tabulate_html(rows, aligns, draw_header)
+        print tabulate_html(rows, aligns, draw_header, html_full_mode)
     else:
         print tabulate_text(rows, widths, draw_header, draw_border, draw_grid,
                             fancy_mode, minimal_mode)
