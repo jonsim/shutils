@@ -17,12 +17,12 @@ class TreeError(RuntimeError):
     pass
 
 class Commit(object):
-    """Represents a single commit object.
+    """Represents an immutable single commit object.
 
     Attributes:
         hash:           string sha hash for the commit. Must be unique.
-        ihash:          int sha hash for the commit. Must be unique. Must never
-            differ from hash.
+        ihash:          int sha hash for the commit. Must be unique. Must be the
+            integer representation of hash.
         parents:        list of string hashes of parent commits.
         children:       list of string hashes of child commits.
         commit_date:    string date the commit was pushed.
@@ -52,6 +52,12 @@ class Commit(object):
         """Hash operator."""
         return self.ihash
 
+    def __cmp__(self, other):
+        """Basic comparison operator. Returns < 0 iff self < other"""
+        if isinstance(other, self.__class__):
+            return self.ihash - other.ihash
+        return -1
+
     def __eq__(self, other):
         """Equality operator."""
         if isinstance(other, self.__class__):
@@ -59,8 +65,34 @@ class Commit(object):
         return False
 
     def __ne__(self, other):
-        """Not-equality operator."""
-        return not self.__eq__(other)
+        """Non-equality operator."""
+        if isinstance(other, self.__class__):
+            return self.ihash != other.ihash
+        return False
+
+    def __lt__(self, other):
+        """Less than operator."""
+        if isinstance(other, self.__class__):
+            return self.ihash < other.ihash
+        return False
+
+    def __le__(self, other):
+        """Less than or equal to operator."""
+        if isinstance(other, self.__class__):
+            return self.ihash <= other.ihash
+        return False
+
+    def __gt__(self, other):
+        """Greater than operator."""
+        if isinstance(other, self.__class__):
+            return self.ihash > other.ihash
+        return False
+
+    def __ge__(self, other):
+        """Greater than or equal to operator."""
+        if isinstance(other, self.__class__):
+            return self.ihash >= other.ihash
+        return False
 
     def to_string(self, pretty=False):
         """Retrieves a printable representation of the commit.
