@@ -2,88 +2,372 @@
 # (c) Copyright 2017 Jonathan Simmonds
 """Tiny script to prepend a string to an input stream."""
 import argparse     # ArgumentParser
-import subprocess   # call
+import subprocess   # call, check_output
 import sys          # exit
+import re           # match
 
-def version_from_str(string):
-    try:
-        version_parts = [int(p) for p in string.split('.')]
-        return (version_parts[0], version_parts[1], version_parts[2])
-    except Exception:
-        raise Exception('Failed to extract git version from ' + string)
+LOOKBACK_THRESHOLD = 1000
 
-def is_git_repository():
-    branch_str = subprocess.check_output(['git', 'branch', '--list',
-                                          '--no-color', '--no-column'])
-    return len(branch_str) > 0
+class GitError(RuntimeError):
+    """Exception caused by Git not behaving as expected."""
+    pass
 
-def branch_exists(branch_name):
-    branch_str = subprocess.check_output(['git', 'branch', '--list', '--no-color',
-                                          '--no-column'])
-    branch_list = [s[2:] for s in branch_str.split('\n')]
-    return branch_name in branch_list
+class TreeError(RuntimeError):
+    """Exception caused by the parsed tree structure not looking as expected."""
+    pass
 
-def get_branch_head(branch_name):
-    heads = subprocess.check_output(['git', 'show-ref', '--heads', '--hash',
-                                     branch_name]).strip().split('\n')
-    if len(heads) != 1:
-        raise Exception('Failed to uniquely determine HEAD of branch %s - found '
-                        '%d branches.' % (branch_name, len(heads)))
-    return heads[0]
+class Commit(object):
+    """Represents a single commit object.
 
-def get_commit_parent(commit, parent_num=1):
+    Attributes:
+        hash:           string sha hash for the commit. Must be unique.
+        parents:        list of string hashes of parent commits.
+        children:       list of string hashes of child commits.
+        commit_date:    string date the commit was pushed.
+        author_name:    string name of commit author.
+        author_email:   string e-mail address of commit author.
+        subject:        string subject line of the commit.
     """
-    Args:
-        parent_num: int number of the parent to fetch. This should be 1-indexed
-            (a request for parent 0 will return commit).
+    def __init__(self, sha, parents, children, commit_date, author_name,
+                 author_email, subject):
+        """Inits the Commit."""
+        self.hash = sha
+        self.parents = parents
+        self.children = children
+        self.commit_date = commit_date
+        self.author_name = author_name
+        self.author_email = author_email
+        self.subject = subject
+
+    def __str__(self):
+        return '%s %s %s\n%s %s %s %s' % \
+            (self.hash, str(self.parents), str(self.children), self.commit_date,
+             self.author_name, self.author_email, self.subject)
+
+class Repo(object):
+    """Represents a repository and its associated commit tree.
+
+    Attributes:
+        _tree:      dict mapping hashes to commit objects.
+        _leaves:    list of hashes of all leaf commits (those who do not have
+            children or whose children are not in the tree).
+        _root:      the root commit hash (that which does not have parents or
+            whose parents are not in the tree). Providing LOOKBACK_THRESHOLD is
+            sufficient there cannot be more than one.
+        _heads:     dict mapping branch names to hashes.
     """
-    relations = subprocess.check_output(['git', 'rev-list', '--parents', '-n', '1',
-                                         commit]).strip().split(' ')
-    if len(relations) < parent_num:
-        raise Exception('Failed to get parent %d - commit %s only has %d parents.'
-                        % (parent_num, commit, len(relations)))
-    return relations[parent_num]
+    def __init__(self):
+        """Inits the Repo and sets branch heads."""
+        self._assert_is_git_repository()
+        self._tree = {}
+        self._leaves = []
+        self._root = None
+        self._heads = self._get_branch_heads()
 
-def find_fork_hash(branch_a, branch_b, start_a=None, start_b=None):
-    # Dereference HEAD starts to actual commits.
-    if not start_a:
-        start_a = get_branch_head(branch_a)
-    if not start_b:
-        start_b = get_branch_head(branch_b)
-    # We want to know the commit before the earliest difference in the lists
-    # (which will by definition be shared).
-    # List all commits for A & B.
-    a_commits = subprocess.check_output(['git', 'rev-list', '--first-parent',
-                                         '--branches=%s' % (branch_a),
-                                         start_a]).strip().split('\n')
-    b_commits = subprocess.check_output(['git', 'rev-list', '--first-parent',
-                                         '--branches=%s' % (branch_b),
-                                         start_b]).strip().split('\n')
-    # From the bottom up, find the first difference to A. Looping is done
-    # manually here as 'in' will by default loop forwards whereas we know
-    # the shortest path to the potential match will be found by looping
-    # backwards (especially for larger repositories).
-    for i_a in range(len(a_commits) - 2, -1, -1):
-        in_b = False
-        for i_b in range(len(b_commits) -2, -1, -1):
-            if b_commits[i_b] == a_commits[i_a]:
-                in_b = True
-                break
-        if not in_b:
-            return a_commits[i_a + 1], a_commits, b_commits
-    raise Exception('Failed to find fork point of %s from %s' % (branch_b, branch_a))
+    def _assert_is_git_repository(self):
+        """Assert the script is being run from a git repository. This is
+        necessary to build the tree.
 
-def find_merge_hash(branch_a, branch_b, pattern, start_a=None):
-    if not start_a:
-        start_a = get_branch_head(branch_a)
-    merge_hash = subprocess.check_output(['git', 'rev-list', '-n', '1',
-                                          '--first-parent', '--merges',
-                                          '--branches=%s' % (branch_a),
-                                          '--grep=%s.*%s' % (pattern, branch_b),
-                                          start_a]).strip()
-    if merge_hash:
-        return merge_hash
-    raise Exception('Failed to find merge point of %s into %s' % (branch_b, branch_a))
+        Raises:
+            GitError: If the script is not being run from a git repository.
+        """
+        try:
+            subprocess.check_output(['git', 'branch'], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            raise GitError('Not a git repository: \'.\'')
+
+    def _get_branch_heads(self):
+        """Retrieves a dict containing mappings for all local branches.
+
+        Returns:
+            dict mapping all (local) branch names to their HEADs.
+
+        Raises:
+            GitError: If git show-ref output could not be parsed.
+        """
+        showref_output = subprocess.check_output(
+            ['git', 'show-ref', '--heads',]).strip().split('\n')
+        heads = {}
+        for line in showref_output:
+            parts = line.split(' ')
+            if len(parts) != 2:
+                raise GitError('Poorly formatted show-ref output found at "%s".'
+                               % (line))
+            head_hash = parts[0]
+            head_ref = parts[1]
+            if head_ref.startswith('refs/heads/'):
+                branch_name = head_ref[len('refs/heads/'):]
+                heads[branch_name] = head_hash
+        return heads
+
+    def branch_exists(self, branch_name):
+        """Determines whether or not a named branch exists locally.
+
+        Args:
+            branch_name:    string name of local branch.
+
+        Returns:
+            bool: True if the branch exists locally, False otherwise.
+        """
+        return branch_name in self._heads
+
+    def get_branch_head(self, branch_name):
+        """Retrieves the HEAD commit of a branch.
+
+        Args:
+            branch_name:    string name of local branch.
+
+        Returns:
+            string: hash of branch HEAD.
+
+        Raises:
+            GitError: If the named branch does not exist locally.
+        """
+        try:
+            return self._heads[branch_name]
+        except KeyError:
+            raise GitError('Branch %s does not exist.' % (branch_name))
+
+    def add(self, start_hash):
+        """Reads all local history starting from start_hash into internal tree.
+
+        Reads at most LOOKBACK_THRESHOLD commits. This must be sufficient to
+        cover the lifetime of the relevant historical action we are interested
+        in. Updates internal data structures.
+
+        Args:
+            start_hash: string hash to start reading from.
+
+        Raises:
+            GitError: If git rev-list output could not be parsed.
+        """
+        self._leaves.append(start_hash)
+        revlist_output = subprocess.check_output(
+            ['git', 'rev-list', '-n', str(LOOKBACK_THRESHOLD), '--full-history',
+             '--sparse', '--parents', '--format=%cd%x00%an%x00%ae%x00%s%n',
+             '--date-order', start_hash]).strip()
+        revlist_entries = revlist_output.split('\n\n')
+        for entry in revlist_entries:
+            lines = entry.split('\n')
+            if len(lines) != 2:
+                raise GitError('Poorly formatted rev-list output encountered '
+                               'at "%s".' % (entry))
+            hashes = lines[0].split(' ')
+            descriptions = lines[1].split('\0')
+            if len(hashes) < 2 or len(descriptions) != 4:
+                raise GitError('Poorly formatted rev-list output encountered '
+                               'at "%s".' % (entry))
+            sha = hashes[1]
+            parent_hashes = hashes[2:]
+            commit_date = descriptions[0]
+            author_name = descriptions[1]
+            author_email = descriptions[2]
+            subject = descriptions[3]
+            self._tree[sha] = Commit(sha, parent_hashes, [], commit_date,
+                                     author_name, author_email, subject)
+        self._update_root(revlist_entries[-1].split('\n')[0].split(' ')[1])
+        self._update_children()
+
+    def _update_root(self, new_root):
+        """Compares new_root with the existing _root commit and updates _root
+        with the true root commit.
+
+        Updates internal data structures.
+
+        Args:
+            new_root:   string hash of root commit for consideration.
+
+        Raises:
+            TreeError: If neither root commit appears more 'correct' than the
+                other (either both good or both bad). This will only happen if
+                the new root exists on a sub-tree not covered by the original
+                root (in which case we don't have much hope of success at all).
+        """
+        if not new_root:
+            return
+        if not self._root:
+            self._root = new_root
+            return
+        if new_root == self._root:
+            return
+        # Does either candidate have any parent commits in the tree?
+        old_apc = any([p in self._tree for p in self._tree[self._root].parents])
+        new_apc = any([p in self._tree for p in self._tree[new_root].parents])
+        if old_apc and not new_apc:
+            self._root = new_root
+            return
+        if new_apc and not old_apc:
+            return
+        raise TreeError('History was found to be cyclic or non-linear while '
+                        'attempting to rebuild tree root. This may mean the '
+                        'lookback distance (%d) is insufficient to cover the '
+                        'relevant history.' % (LOOKBACK_THRESHOLD))
+
+    def _update_children(self):
+        """Updates all commit children attribute.
+
+        This attribute is not set from rev-list and must be manually inferred.
+        Updates internal data structures.
+        """
+        # Clear all children.
+        for commit in self._tree.values():
+            commit.children = []
+        # Write all children.
+        for commit in self._tree.values():
+            for parent in commit.parents:
+                try:
+                    self._tree[parent].children.append(commit.hash)
+                except KeyError:
+                    pass
+
+    def get_commit_parent(self, sha, parent_num=0):
+        """Retrieves the commit's given parent commit.
+
+        Args:
+            sha:        string hash for the commit whose parents to query.
+            parent_num: 0-indexed number of parent to request.
+
+        Returns:
+            string: hash for the requested parent.
+
+        Raises:
+            TreeError: If the given commit does not exist.
+            IndexError: If the given commit does not have enough parents.
+        """
+        try:
+            commit = self._tree[sha]
+        except KeyError:
+            raise TreeError('Cannot find parent of non-existant commit %s. '
+                            'This is typically caused by the lookback distance '
+                            '(%d) being insufficient to cover the relevant '
+                            'history.' % (sha, LOOKBACK_THRESHOLD))
+        if len(commit.parents) <= parent_num:
+            raise IndexError('Failed to get parent %d - commit %s only has %d '
+                             'parents.' % (parent_num, sha, len(commit.parents)))
+        return commit.parents[parent_num]
+
+    def _walk_tree(self, sha):
+        """Walks down the first-parent tree from sha making a list of visits.
+
+        Args:
+            sha:    string hash of the commit to start the walk from.
+
+        Returns:
+            list of strings: hashes of visited commits.
+
+        Raises:
+            TreeError: If the start commit does not exist.
+        """
+        visits = []
+        try:
+            commit = self._tree[sha]
+        except KeyError:
+            raise TreeError('Cannot start walk from non-existant commit %s. '
+                            'This is typically caused by the lookback distance '
+                            '(%d) being insufficient to cover the relevant '
+                            'history.' % (sha, LOOKBACK_THRESHOLD))
+        while commit:
+            visits.append(commit.hash)
+            try:
+                commit = self._tree[commit.parents[0]]
+            except (KeyError, IndexError):
+                commit = None
+        return visits
+
+    def find_oldest_ancestor(self, sha_a, sha_b):
+        """Retrieves the oldest ancestor commit between two commit histories.
+
+        This takes the linearised history given by the trees starting at leaves
+        sha_a (tree A) and sha_b (tree B).
+
+        Args:
+            sha_a:  string hash of the first leaf commit to list history from.
+            sha_b:  string hash of the second leaf commit to list history from.
+
+        Returns:
+            string: hash of the oldest common ancestor (point before tree
+                divergence) which exists in A and B.
+            list of strings: hashes of all commits in A but not in B.
+            list of strings: hashes of all commits in B but not in A.
+
+        Raises:
+            TreeError: If the histories have already diverged before the start
+                of the internal tree, or if A and B have never diverged (i.e.
+                are identical).
+        """
+        # Walk down the first-parent tree from both start locations.
+        visits_a = self._walk_tree(sha_a)
+        visits_b = self._walk_tree(sha_b)
+        # We want to know the commit before the earliest difference in the lists
+        # (which will by definition be shared).
+        if visits_a[-1] != visits_b[-1]:
+            raise TreeError('Cannot find a reference point to start looking '
+                            'for oldest ancestory from. This is typically '
+                            'caused by the lookback distance (%d) being '
+                            'insufficient to cover the branch\'s lifetime.'
+                            % (LOOKBACK_THRESHOLD))
+        ancestor_i = None
+        for i in range(-2, -min(len(visits_a), len(visits_b)) - 1, -1):
+            if visits_a[i] != visits_b[i]:
+                ancestor_i = i+1
+        if ancestor_i is None:
+            raise TreeError('Histories for %s and %s are identical.'
+                            % (sha_a, sha_b))
+        a_diffs = [a for a in visits_a if a not in visits_b]
+        b_diffs = [b for b in visits_b if b not in visits_a]
+        return visits_a[ancestor_i], a_diffs, b_diffs
+
+    def find_merge_hash(self, merged_branch, start_sha, merge_pattern=''):
+        """Retrieves the commit at which a branch was merged.
+
+        Args:
+            merged_branch:  string name of the merged branch to find.
+            start_sha:      string hash of the commit to start searching from.
+            merge_pattern:  string pattern of the merge commit message to search
+                for. The commit message must start with the given pattern
+                (defaults to the empty string), followed by any number of
+                characters, followed by the name of the branch. The default git
+                merge subject looks like "Merge branch 'branchname'".
+
+        Returns:
+            string: hash of the merge commit.
+
+        Raises:
+            TreeError: If start_sha does not exist or no matching merge commit
+                could be found.
+        """
+        try:
+            commit = self._tree[start_sha]
+        except KeyError:
+            raise TreeError('Cannot find merge hash from non-existant commit '
+                            '%s. This is typically caused by the lookback '
+                            'distance (%d) being insufficient to cover the '
+                            'relevant history.' % (start_sha,
+                                                   LOOKBACK_THRESHOLD))
+        merge_re = re.compile('^%s.*%s' % (merge_pattern, merged_branch))
+        while commit:
+            if len(commit.parents) > 1 and merge_re.match(commit.subject):
+                return commit.hash
+            try:
+                commit = self._tree[commit.parents[0]]
+            except (KeyError, IndexError):
+                commit = None
+        raise TreeError('Failed to find merge point of %s' % (merged_branch))
+
+    def __str__(self):
+        commits = []
+        commits.append('leaves: %s\nroot:   %s' % (str(self._leaves), str(self._root)))
+        to_walk = self._leaves
+        walked = []
+        while to_walk:
+            next_hash = to_walk.pop()
+            if next_hash in self._tree and next_hash not in walked:
+                next_commit = self._tree[next_hash]
+                commits.append(str(next_commit))
+                to_walk += next_commit.parents
+            walked.append(next_hash)
+        return '\n\n'.join(commits)
+
 
 def print_summary(branch_a, branch_b, branch_b_exists, fork_hash, merge_hash):
     print 'Summary:'
@@ -201,25 +485,30 @@ def main():
     args = parser.parse_args()
 
     # Do it.
-    if not is_git_repository():
-        print 'ERR: Not in a git repository.'
+    try:
+        repo = Repo()
+    except GitError, ex:
+        print 'ERR:', ex
         sys.exit(1)
 
-    branch_a_exists = branch_exists(args.branch_a)
-    branch_b_exists = branch_exists(args.branch_b)
+    branch_a_exists = repo.branch_exists(args.branch_a)
+    branch_b_exists = repo.branch_exists(args.branch_b)
 
     if not branch_a_exists:
         # Branch A doesn't exist.
         print 'ERR: Branch A must always exist.'
         sys.exit(1)
-    elif branch_b_exists:
+
+    repo.add(repo.get_branch_head(args.branch_a))
+
+    if branch_b_exists:
+        repo.add(repo.get_branch_head(args.branch_b))
         # Both branches exist.
         try:
-            start_a = get_branch_head(args.branch_a)
-            start_b = get_branch_head(args.branch_b)
-            fork_hash, a_commits, b_commits = find_fork_hash(args.branch_a, args.branch_b,
-                                                             start_a, start_b)
-        except Exception, ex:
+            start_a = repo.get_branch_head(args.branch_a)
+            start_b = repo.get_branch_head(args.branch_b)
+            fork_hash, a_commits, b_commits = repo.find_oldest_ancestor(start_a, start_b)
+        except (GitError, TreeError), ex:
             print 'ERR:', ex
             sys.exit(1)
 
@@ -240,12 +529,12 @@ def main():
     else:
         # Only branch A exists.
         try:
-            merge_hash = find_merge_hash(args.branch_a, args.branch_b, args.pattern)
-            start_a = get_commit_parent(merge_hash, 1)
-            start_b = get_commit_parent(merge_hash, 2)
-            fork_hash, a_commits, b_commits = find_fork_hash(args.branch_a, args.branch_b,
-                                                             start_a, start_b)
-        except Exception, ex:
+            start_a = repo.get_branch_head(args.branch_a)
+            merge_hash = repo.find_merge_hash(args.branch_b, start_a, args.pattern)
+            start_a = repo.get_commit_parent(merge_hash, 0)
+            start_b = repo.get_commit_parent(merge_hash, 1)
+            fork_hash, a_commits, b_commits = repo.find_oldest_ancestor(start_a, start_b)
+        except (GitError, TreeError), ex:
             print 'ERR:', ex
             sys.exit(1)
 
