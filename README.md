@@ -205,7 +205,7 @@ optional arguments:
                         "Merge branch". The merge commit's subject must
                         contain the pattern followed by the merged branch
                         name. It is matched with the following regex:
-                        ^PATTERN.*BRANCH_NAME.*$
+                        ^PATTERN.*BRANCH_B.*$
   -u [PATTERN], --update-pattern [PATTERN]
                         The stem merge commit pattern to identify any 'update'
                         merge commits from A to B. This is only necessary if
@@ -245,62 +245,62 @@ git branch
 
 
 git log --format=oneline --abbrev-commit --date-order
-c080e26 Merge branch 'topic3'
-4f5aa34 N (master)
-63873f5 Merge branch 'master' into topic3
-919b877 M (topic3)
-4b7d2f6 L (master)
-51f5f02 K (master)
-2469e34 I (master)
-495e333 Merge branch 'topic1'
-9e1c0c0 H (topic1)
-864202d Merge branch 'master' into topic1
-d9276bb G (topic1)
-26b5a75 E (master)
-518a2bd F (topic1)
-3812d95 D (master)
-4132786 C (master)
-06cffef B (master)
-3ea0fd5 A ()
+a0fcbdb Merge branch 'topic3'
+345c0d8 N (master)
+86e2f61 Merge branch 'master' into topic3
+2468f1c M (topic3)
+47a10a2 L (master)
+d65ef36 K (master)
+753882d I (master)
+6d54883 Merge branch 'topic1'
+129e8fe H (topic1)
+2f793a2 Merge branch 'master' into topic1
+01211e2 G (topic1)
+03bd8f8 E (master)
+2219deb F (topic1)
+4816be9 D (master)
+a2a1d0d C (master)
+230015c B (master)
+1aa24af A ()
 
 
 git-compare-branch master topic3
 Summary:
   topic3 still exists
-  topic3 forked from master at: 4b7d2f6fc8738481336f5d0d686b6983b5966ca4
+  topic3 forked from master at: 47a10a2bfd8416162e497968aba2d870f33751ba
 
-Commits made on master but not topic3:
-  63873f5550aaf9cb07c39aecc810036d1dc7b45b
-  919b8779f9b5a3fa4898fd07f5325d07dab33539
+Commits made on topic3 but not master:
+  86e2f6168779f3cd5012ea318f74ef06f530492e
+  2468f1ccdaa64281e19ebf47eea64f12103bb386
 
 
 git-compare-branch master topic1 --pretty
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 495e333dfeb8a7a175c30d32e6beddc0f11f1f31
-  topic1 forked from master at: 3812d95c2e35d35e546778f8f6c528867b695410
+  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
+  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
 
-Commits made on master but not topic1:
-  9e1c0c0 H (topic1)
-  864202d Merge branch 'master' into topic1
-  d9276bb G (topic1)
-  518a2bd F (topic1)
+Commits made on topic1 but not master:
+  129e8fe H (topic1)
+  2f793a2 Merge branch 'master' into topic1
+  01211e2 G (topic1)
+  2219deb F (topic1)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 495e333dfeb8a7a175c30d32e6beddc0f11f1f31
-  topic1 forked from master at: 3812d95c2e35d35e546778f8f6c528867b695410
-
-Commits made on master but not topic1:
-  9e1c0c0 H (topic1)
-  864202d Merge branch 'master' into topic1
-  d9276bb G (topic1)
-  518a2bd F (topic1)
+  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
+  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
 
 Commits made on topic1 but not master:
-  26b5a75 E (master)
+  129e8fe H (topic1)
+  2f793a2 Merge branch 'master' into topic1
+  01211e2 G (topic1)
+  2219deb F (topic1)
+
+Commits made on master but not topic1:
+  03bd8f8 E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -309,33 +309,33 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     495e333 Merge branch 'topic1'
+  *     6d54883 Merge branch 'topic1'
   |\    
-  | *   9e1c0c0 H (topic1)
-  | *   864202d Merge branch 'master' into topic1
+  | *   129e8fe H (topic1)
+  | *   2f793a2 Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   26b5a75 E (master)
-  | *   d9276bb G (topic1)
-  | *   518a2bd F (topic1)
+  * |   03bd8f8 E (master)
+  | *   01211e2 G (topic1)
+  | *   2219deb F (topic1)
   |/    
-  *     3812d95 D (master)
+  *     4816be9 D (master)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph --exclude-updates
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 495e333dfeb8a7a175c30d32e6beddc0f11f1f31
-  topic1 forked from master at: 3812d95c2e35d35e546778f8f6c528867b695410
-
-Commits made on master but not topic1:
-  9e1c0c0 H (topic1)
-  d9276bb G (topic1)
-  518a2bd F (topic1)
+  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
+  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
 
 Commits made on topic1 but not master:
-  26b5a75 E (master)
+  129e8fe H (topic1)
+  01211e2 G (topic1)
+  2219deb F (topic1)
+
+Commits made on master but not topic1:
+  03bd8f8 E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -344,18 +344,18 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     495e333 Merge branch 'topic1'
+  *     6d54883 Merge branch 'topic1'
   |\    
-  | *   9e1c0c0 H (topic1)
-  | *   864202d Merge branch 'master' into topic1
+  | *   129e8fe H (topic1)
+  | *   2f793a2 Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   26b5a75 E (master)
-  | *   d9276bb G (topic1)
-  | *   518a2bd F (topic1)
+  * |   03bd8f8 E (master)
+  | *   01211e2 G (topic1)
+  | *   2219deb F (topic1)
   |/    
-  *     3812d95 D (master)
+  *     4816be9 D (master)
 
 ```
 
@@ -592,7 +592,7 @@ find printers -name '*.py' -print0 | wcz
 581 lines in 5 files
 
 git ls-files -z | wcz -s
-3202 lines in 33 files
+3201 lines in 33 files
 ```
 
 ## xwinid

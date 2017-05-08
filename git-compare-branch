@@ -503,6 +503,31 @@ def print_branch_diffs(branch_a, branch_b, b_commits, fork_commit, pretty=False,
         if not exclude_regex or not exclude_regex.match(commit.subject):
             print '  %s' % (commit.to_string(pretty))
 
+def print_finger(branch_a, branch_b, b_commits, fork_commit,
+                 exclude_regex=None):
+    """Prints the list of authors fingered by the commit differences.
+
+    Args:
+        branch_a:       string name of the A branch (that being differed to).
+        branch_b:       string name of the B branch (that with differences on).
+        b_commits:      list of Commit objects representing those which appear
+            on branch B but not branch A.
+        fork_commit:    Commit object representing the fork point.
+        exclude_regex:  re.RegexObject object or None. If not None, any commits
+            whose subject lines match the regex will be excluded from the
+            fingering. Useful to exclude merge commits onto a topic from the
+            fingered list to get genuine committers only.
+    """
+    authors = []
+    for commit in b_commits:
+        if commit == fork_commit:
+            break
+        if not exclude_regex or not exclude_regex.match(commit.subject):
+            authors.append((commit.author_name, commit.author_email))
+    print 'Authors of commits on %s but not %s:' % (branch_b, branch_a)
+    for author in set(authors):
+        print '  %s <%s>' % (author[0], author[1])
+
 def print_lifetime_graph(repo, start_commit, end_commit, pretty=False):
     """Prints the topology graph between two commits.
 
@@ -526,31 +551,6 @@ def print_lifetime_graph(repo, start_commit, end_commit, pretty=False):
         commit = repo.get_commit(part[1])
         print '  %s  %s' % (part[0].ljust(max_len),
                             commit.to_string(pretty) if commit else part[1])
-
-def print_finger(branch_a, branch_b, b_commits, fork_commit,
-                 exclude_regex=None):
-    """Prints the list of authors fingered by the commit differences.
-
-    Args:
-        branch_a:       string name of the A branch (that being differed to).
-        branch_b:       string name of the B branch (that with differences on).
-        b_commits:      list of Commit objects representing those which appear
-            on branch B but not branch A.
-        fork_commit:    Commit object representing the fork point.
-        exclude_regex:  re.RegexObject object or None. If not None, any commits
-            whose subject lines match the regex will be excluded from the
-            fingering. Useful to exclude merge commits onto a topic from the
-            fingered list to get genuine committers only.
-    """
-    authors = []
-    for commit in b_commits:
-        if commit == fork_commit:
-            break
-        if not exclude_regex or not exclude_regex.match(commit.subject):
-            authors.append((commit.author_name, commit.author_email))
-    print 'Authors of commits on %s but not %s:' % (branch_a, branch_b)
-    for author in set(authors):
-        print '  %s <%s>' % (author[0], author[1])
 
 def main():
     """Main method."""
@@ -604,7 +604,7 @@ def main():
                         'pattern "Merge branch". The merge commit\'s subject '
                         'must contain the pattern followed by the merged '
                         'branch name. It is matched with the following regex: '
-                        '^PATTERN.*BRANCH_NAME.*$')
+                        '^PATTERN.*BRANCH_B.*$')
     parser.add_argument('-u', '--update-pattern',
                         type=str, metavar='PATTERN', nargs='?',
                         default=None, const=None,
@@ -710,18 +710,18 @@ def main():
             print_summary(args.a, args.b, b_exists, fork_commit, merge_commit)
         if args.commits:
             print ''
-            print_branch_diffs(args.b, args.a, b_commits, fork_commit,
+            print_branch_diffs(args.a, args.b, b_commits, fork_commit,
                                args.pretty, update_re)
             if args.both_ways:
                 print ''
-                print_branch_diffs(args.a, args.b, a_commits, fork_commit,
+                print_branch_diffs(args.b, args.a, a_commits, fork_commit,
                                    args.pretty, update_re)
         if args.finger:
             print ''
-            print_finger(args.b, args.a, b_commits, fork_commit, update_re)
+            print_finger(args.a, args.b, b_commits, fork_commit, update_re)
             if args.both_ways:
                 print ''
-                print_finger(args.a, args.b, a_commits, fork_commit, update_re)
+                print_finger(args.b, args.a, a_commits, fork_commit, update_re)
         if not b_exists and args.graph:
             print ''
             print_lifetime_graph(repo, fork_commit, merge_commit, args.pretty)
