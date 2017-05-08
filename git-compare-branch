@@ -601,10 +601,10 @@ def main():
                         help='The stem merge commit pattern to identify the '
                         'merge commit from B to A. This is only necessary if '
                         'B does not exist. Defaults to the standard git merge '
-                        'pattern "Merge branch". If using a non-default value, '
-                        'the merge commit\'s subject must contain the pattern '
-                        'followed by the merged branch name. It is matched '
-                        'with the following regex: "^PATTERN.*BRANCH_NAME.*$".')
+                        'pattern "Merge branch". The merge commit\'s subject '
+                        'must contain the pattern followed by the merged '
+                        'branch name. It is matched with the following regex: '
+                        '^PATTERN.*BRANCH_NAME.*$')
     parser.add_argument('-u', '--update-pattern',
                         type=str, metavar='PATTERN', nargs='?',
                         default=None, const=None,
@@ -612,11 +612,10 @@ def main():
                         '\'update\' merge commits from A to B. This is only '
                         'necessary if using --exclude-updates and if this '
                         'pattern differs from --merge-pattern. Defaults to the '
-                        'value given in --merge-pattern. If using a non-'
-                        'default value, all update merge commit subjects '
-                        'must contain the pattern followed by A\'s name '
-                        'followed by B\'s name. It is matched with the '
-                        'following regex: "^PATTERN.*BRANCH_A.*BRANCH_B.*$".')
+                        'value given in --merge-pattern. All \'update\' merge '
+                        'commit subjects must contain the pattern followed by '
+                        'A\'s name followed by B\'s name. It is matched with '
+                        'the following regex: ^PATTERN.*BRANCH_A.*BRANCH_B.*$')
     parser.add_argument('-p', '--pretty',
                         dest='pretty', action='store_true',
                         default=False,
