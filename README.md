@@ -259,7 +259,7 @@ Python script
 #### Usage
 ```
 usage: tabulate [-h] [-r [ROW_DELIM]] [-c [COL_DELIM]] [-H] [-b] [-f [FORMAT]]
-                [-s [{minimal,basic,basic-grid,fancy,fancy-grid,html}]]
+                [-s [{minimal,basic,basic-grid,fancy,fancy-grid,html,html-full}]]
                 [file]
 
 Takes input from a file or stdin, splits it into rows and columns on
@@ -286,7 +286,7 @@ optional arguments:
                         column alignment, 'c' for centered, 'l' for left, 'r'
                         for right). E.g. "10r,15,c". By default all columns
                         are unlimited width, left aligned.
-  -s [{minimal,basic,basic-grid,fancy,fancy-grid,html}]
+  -s [{minimal,basic,basic-grid,fancy,fancy-grid,html,html-full}]
                         Style of table to draw. Defaults to "basic". "minimal"
                         uses purely spaces to align the elements with an
                         underline for headers. "basic" separates columns with
@@ -297,7 +297,8 @@ optional arguments:
                         non-ASCII characters for the decorations. "fancy-grid"
                         is similar to basic-grid but using non-ASCII
                         characters for the decoration. "html" produces a HTML
-                        table element.
+                        table element. "html-full" produces a standalone HTML
+                        page with the table on it.
 ```
 
 #### Examples
