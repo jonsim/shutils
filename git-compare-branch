@@ -6,8 +6,6 @@ import subprocess   # call, check_output
 import sys          # exit
 import re           # match
 
-LOOKBACK_THRESHOLD = 1000
-
 class GitError(RuntimeError):
     """Exception caused by Git not behaving as expected."""
     pass
@@ -119,14 +117,22 @@ class Repo(object):
             whose parents are not in the tree). Providing LOOKBACK_THRESHOLD is
             sufficient there cannot be more than one.
         _heads:     dict mapping branch names to hashes.
+        _lookback:  int number of commits to look back when building the tree.
+            May be <= 0 to consider all commits.
     """
-    def __init__(self):
-        """Inits the Repo and sets branch heads."""
+    def __init__(self, lookback_distance):
+        """Inits the Repo and sets branch heads.
+
+        Args:
+            lookback_distance:  int number of commits to lookback when building
+                the tree. May be <= 0 to consider all commits.
+        """
         self._assert_is_git_repository()
         self._tree = {}
         self._leaves = []
         self._root = None
         self._heads = self._get_branch_heads()
+        self._lookback = lookback_distance
 
     def _assert_is_git_repository(self):
         """Assert the script is being run from a git repository. This is
@@ -200,16 +206,18 @@ class Repo(object):
         in. Updates internal data structures.
 
         Args:
-            start_hash: string hash to start reading from.
+            start_hash:         string hash to start reading from.
 
         Raises:
             GitError: If git rev-list output could not be parsed.
         """
         self._leaves.append(start_hash)
-        revlist_output = subprocess.check_output(
-            ['git', 'rev-list', '-n', str(LOOKBACK_THRESHOLD), '--full-history',
-             '--sparse', '--parents', '--format=%cd%x00%an%x00%ae%x00%s%n',
-             '--date-order', start_hash]).strip()
+        command = ['git', 'rev-list']
+        if self._lookback > 0:
+            command += ['-n', str(self._lookback)]
+        command += ['--full-history', '--sparse', '--parents', '--date-order',
+                    '--format=%cd%x00%an%x00%ae%x00%s%n', start_hash]
+        revlist_output = subprocess.check_output(command).strip()
         revlist_entries = revlist_output.split('\n\n')
         for entry in revlist_entries:
             lines = entry.split('\n')
@@ -265,7 +273,7 @@ class Repo(object):
         raise TreeError('History was found to be cyclic or non-linear while '
                         'attempting to rebuild tree root. This may mean the '
                         'lookback distance (%d) is insufficient to cover the '
-                        'relevant history.' % (LOOKBACK_THRESHOLD))
+                        'relevant history.' % (self._lookback))
 
     def _update_children(self):
         """Updates all commit children attribute.
@@ -322,7 +330,7 @@ class Repo(object):
             raise TreeError('Cannot find parent commit of %s. This is '
                             'typically caused by the lookback distance '
                             '(%d) being insufficient to cover the relevant '
-                            'history.' % (commit.hash, LOOKBACK_THRESHOLD))
+                            'history.' % (commit.hash, self._lookback))
 
     def _walk_tree(self, sha):
         """Walks down the first-parent tree from sha making a list of visits.
@@ -343,7 +351,7 @@ class Repo(object):
             raise TreeError('Cannot start walk from non-existant commit %s. '
                             'This is typically caused by the lookback distance '
                             '(%d) being insufficient to cover the relevant '
-                            'history.' % (sha, LOOKBACK_THRESHOLD))
+                            'history.' % (sha, self._lookback))
         while commit:
             visits.append(commit)
             try:
@@ -383,7 +391,7 @@ class Repo(object):
                             'for oldest ancestory from. This is typically '
                             'caused by the lookback distance (%d) being '
                             'insufficient to cover the branch\'s lifetime.'
-                            % (LOOKBACK_THRESHOLD))
+                            % (self._lookback))
         ancestor_i = None
         for i in range(-2, -min(len(visits_a), len(visits_b)) - 1, -1):
             if visits_a[i] != visits_b[i]:
@@ -395,17 +403,15 @@ class Repo(object):
         b_diffs = [b for b in visits_b if b not in visits_a]
         return visits_a[ancestor_i], a_diffs, b_diffs
 
-    def find_merge_commit(self, merged_branch, start_sha, merge_pattern=''):
+    def find_merge_commit(self, merged_branch, start_sha, merge_regex):
         """Retrieves the commit at which a branch was merged.
 
         Args:
             merged_branch:  string name of the merged branch to find.
             start_sha:      string hash of the commit to start searching from.
-            merge_pattern:  string pattern of the merge commit message to search
-                for. The commit message must start with the given pattern
-                (defaults to the empty string), followed by any number of
-                characters, followed by the name of the branch. The default git
-                merge subject looks like "Merge branch 'branchname'".
+            merge_regex:    re.RegexObject object to apply to all merge commit
+                subject lines to find the appropriate merge commit. The first
+                commit which matches will be returned.
 
         Returns:
             Commit: Commit object of the merge commit.
@@ -420,11 +426,9 @@ class Repo(object):
             raise TreeError('Cannot find merge hash from non-existant commit '
                             '%s. This is typically caused by the lookback '
                             'distance (%d) being insufficient to cover the '
-                            'relevant history.' % (start_sha,
-                                                   LOOKBACK_THRESHOLD))
-        merge_re = re.compile('^%s.*%s' % (merge_pattern, merged_branch))
+                            'relevant history.' % (start_sha, self._lookback))
         while commit:
-            if len(commit.parents) > 1 and merge_re.match(commit.subject):
+            if len(commit.parents) > 1 and merge_regex.match(commit.subject):
                 return commit
             try:
                 commit = self._tree[commit.parents[0]]
@@ -449,7 +453,8 @@ class Repo(object):
         return '\n\n'.join(commits)
 
 
-def print_summary(branch_a, branch_b, branch_b_exists, fork_commit, merge_commit):
+def print_summary(branch_a, branch_b, branch_b_exists, fork_commit,
+                  merge_commit):
     """Prints a summary about the comparison.
 
     Args:
@@ -475,8 +480,8 @@ def print_summary(branch_a, branch_b, branch_b_exists, fork_commit, merge_commit
         print '  %s forked from %s at: %s' % (branch_b, branch_a,
                                               fork_commit.hash)
 
-def print_branch_diffs(branch_a, branch_b, b_commits, fork_commit,
-                       pretty=False):
+def print_branch_diffs(branch_a, branch_b, b_commits, fork_commit, pretty=False,
+                       exclude_regex=None):
     """Prints the differences between two branches.
 
     Args:
@@ -486,12 +491,17 @@ def print_branch_diffs(branch_a, branch_b, b_commits, fork_commit,
             on branch B but not branch A.
         fork_commit:    Commit object representing the fork point.
         pretty:         bool, True to pretty print the commits, false otherwise.
+        exclude_regex:  re.RegexObject object or None. If not None, any commits
+            whose subject lines match the regex will be excluded from the diff.
+            Useful to exclude merge commits onto a topic from the commit list to
+            get genuine commits only.
     """
     print 'Commits made on %s but not %s:' % (branch_b, branch_a)
     for commit in b_commits:
         if commit == fork_commit:
             break
-        print '  %s' % (commit.to_string(pretty))
+        if not exclude_regex or not exclude_regex.match(commit.subject):
+            print '  %s' % (commit.to_string(pretty))
 
 def print_lifetime_graph(repo, start_commit, end_commit, pretty=False):
     """Prints the topology graph between two commits.
@@ -517,7 +527,8 @@ def print_lifetime_graph(repo, start_commit, end_commit, pretty=False):
         print '  %s  %s' % (part[0].ljust(max_len),
                             commit.to_string(pretty) if commit else part[1])
 
-def print_finger(branch_a, branch_b, b_commits, fork_commit):
+def print_finger(branch_a, branch_b, b_commits, fork_commit,
+                 exclude_regex=None):
     """Prints the list of authors fingered by the commit differences.
 
     Args:
@@ -526,162 +537,198 @@ def print_finger(branch_a, branch_b, b_commits, fork_commit):
         b_commits:      list of Commit objects representing those which appear
             on branch B but not branch A.
         fork_commit:    Commit object representing the fork point.
+        exclude_regex:  re.RegexObject object or None. If not None, any commits
+            whose subject lines match the regex will be excluded from the
+            fingering. Useful to exclude merge commits onto a topic from the
+            fingered list to get genuine committers only.
     """
     authors = []
     for commit in b_commits:
         if commit == fork_commit:
             break
-        authors.append((commit.author_name, commit.author_email))
+        if not exclude_regex or not exclude_regex.match(commit.subject):
+            authors.append((commit.author_name, commit.author_email))
     print 'Authors of commits on %s but not %s:' % (branch_a, branch_b)
     for author in set(authors):
         print '  %s <%s>' % (author[0], author[1])
 
 def main():
     """Main method."""
-    # Handle command line
-    parser = argparse.ArgumentParser(description='Finds commits in branch_b '
-                                     'which are not in branch_a.')
-    parser.add_argument('branch_a',
-                        type=str,
-                        help='Branch A.')
-    parser.add_argument('branch_b',
-                        type=str,
-                        help='Branch B.')
-    parser.add_argument('--pattern',
-                        type=str, nargs='?', const='', default='Merge branch',
-                        help='The merge commit pattern to identify merge '
-                        'commits. Defaults to the standard git merge pattern '
-                        '"Merge branch". If using a non-default value, the '
-                        'merge commits subject must contain the merged branch '
-                        'name somewhere preceding the pattern. It is matched '
-                        '"^PATTERN.*BRANCH_NAME.*$".')
-    parser.add_argument('--both-ways',
-                        dest='both_ways', action='store_true', default=False,
-                        help='Print both differences on branch B compared to '
-                        'branch A as well as on branch A compared to branch B. '
-                        'By default just the differences from B to A are '
-                        'printed.')
-    parser.add_argument('--pretty',
-                        dest='pretty', action='store_true', default=False,
+    # Handle command line.
+    parser = argparse.ArgumentParser(description='Finds commits on branch B '
+                                     'which are not on branch A. This is able '
+                                     'to handle if B has already been merged '
+                                     'down to A. This command runs purely '
+                                     'locally and as such the branches to '
+                                     'compare should be checked out and up to '
+                                     'date before running. No state is changed '
+                                     'by running this.')
+    parser.add_argument('a',
+                        type=str, metavar='BRANCH-A',
+                        help='Branch A. This is the branch against which the '
+                        'difference is taken. It must exist locally.')
+    parser.add_argument('b',
+                        type=str, metavar='BRANCH-B',
+                        help='Branch B. This is the branch whose differences '
+                        'are recorded. It must either exist locally or have a '
+                        'corresponding merge commit onto A within the lookback '
+                        'distance. See --merge-pattern and --lookback for '
+                        'details on identifying merge commits and setting the '
+                        'lookback respectively.')
+    parser.add_argument('-b', '--both-ways',
+                        dest='both_ways', action='store_true',
+                        default=False,
+                        help='Print not only the differences from B to A (the '
+                        'default), but also the differences from A to B.')
+    parser.add_argument('-n', '--lookback',
+                        type=int, metavar='NUMBER', nargs='?',
+                        default=1000, const=0,
+                        help='Sets the number of commits to consider in the '
+                        'history. The lookback distance must cover the full '
+                        'lifetime of the branch (i.e. to the fork point). May '
+                        'be set to 0 to consider all history (on large '
+                        'repositorys this may take some time). Defaults to '
+                        '1000.')
+    parser.add_argument('-e', '--exclude-updates',
+                        dest='exclude_updates', action='store_true',
+                        default=False,
+                        help='Exclude update commits (merges from A back to B) '
+                        'from all differences. By default all differences are '
+                        'considered.')
+    parser.add_argument('-m', '--merge-pattern',
+                        type=str, metavar='PATTERN', nargs='?',
+                        default='Merge branch', const='',
+                        help='The stem merge commit pattern to identify the '
+                        'merge commit from B to A. This is only necessary if '
+                        'B does not exist. Defaults to the standard git merge '
+                        'pattern "Merge branch". If using a non-default value, '
+                        'the merge commit\'s subject must contain the pattern '
+                        'followed by the merged branch name. It is matched '
+                        'with the following regex: "^PATTERN.*BRANCH_NAME.*$".')
+    parser.add_argument('-u', '--update-pattern',
+                        type=str, metavar='PATTERN', nargs='?',
+                        default=None, const=None,
+                        help='The stem merge commit pattern to identify any '
+                        '\'update\' merge commits from A to B. This is only '
+                        'necessary if using --exclude-updates and if this '
+                        'pattern differs from --merge-pattern. Defaults to the '
+                        'value given in --merge-pattern. If using a non-'
+                        'default value, all update merge commit subjects '
+                        'must contain the pattern followed by A\'s name '
+                        'followed by B\'s name. It is matched with the '
+                        'following regex: "^PATTERN.*BRANCH_A.*BRANCH_B.*$".')
+    parser.add_argument('-p', '--pretty',
+                        dest='pretty', action='store_true',
+                        default=False,
                         help='Print a short hash and the subject for all '
                         'commits. By default just the full hash is printed.')
-    parser.add_argument('--summary',
-                        dest='summary', action='store_true', default=True,
+    parser.add_argument('-s', '--summary',
+                        dest='summary', action='store_true',
+                        default=True,
                         help='Print a summary of the status of each branch and '
                         'their relationship. This is the default.')
-    parser.add_argument('--no-summary',
-                        dest='summary', action='store_false', default=False,
+    parser.add_argument('-S', '--no-summary',
+                        dest='summary', action='store_false',
+                        default=False,
                         help='Do not print the summary list (see --summary).')
-    parser.add_argument('--commits',
-                        dest='commits', action='store_true', default=True,
+    parser.add_argument('-c', '--commits',
+                        dest='commits', action='store_true',
+                        default=True,
                         help='Print a list of all commits which exist on '
                         'branch B but not branch A. This is the default.')
-    parser.add_argument('--no-commits',
-                        dest='commits', action='store_false', default=False,
+    parser.add_argument('-C', '--no-commits',
+                        dest='commits', action='store_false',
+                        default=False,
                         help='Do not print the commit list (see --commits).')
-    parser.add_argument('--finger',
-                        dest='finger', action='store_true', default=False,
+    parser.add_argument('-f', '--finger',
+                        dest='finger', action='store_true',
+                        default=False,
                         help='Print a list of all users who have made commits '
                         'on branch B.')
-    parser.add_argument('--no-finger',
-                        dest='finger', action='store_false', default=True,
+    parser.add_argument('-F', '--no-finger',
+                        dest='finger', action='store_false',
+                        default=True,
                         help='Do not print the finger list (see --finger). '
                         'This is the default.')
-    parser.add_argument('--graph',
-                        dest='graph', action='store_true', default=False,
+    parser.add_argument('-g', '--graph',
+                        dest='graph', action='store_true',
+                        default=False,
                         help='Print a chronological graph of the commits made '
                         'to branches A and B during their lifetime. This only '
                         'has an effect if branch B has been merged into branch '
                         'A, otherwise ignored. Corresponds to the --graph '
                         'option of git log.')
-    parser.add_argument('--no-graph',
-                        dest='graph', action='store_false', default=True,
+    parser.add_argument('-G', '--no-graph',
+                        dest='graph', action='store_false',
+                        default=True,
                         help='Do not print the commit graph (see --graph). '
                         'This is the default.')
     args = parser.parse_args()
 
-    # Do it.
+    # Post-process command line.
+    merge_re = re.compile('^%s.*%s' % (args.merge_pattern, args.b))
+    update_re = re.compile('^%s.*%s.*%s' %
+                           (args.update_pattern if args.update_pattern is
+                            not None else args.merge_pattern,
+                            args.a, args.b)) if args.exclude_updates else None
+
+    # Just do it.
     try:
-        repo = Repo()
-    except GitError, ex:
-        print 'ERR:', ex
-        sys.exit(1)
+        repo = Repo(args.lookback)
 
-    branch_a_exists = repo.branch_exists(args.branch_a)
-    branch_b_exists = repo.branch_exists(args.branch_b)
+        a_exists = repo.branch_exists(args.a)
+        b_exists = repo.branch_exists(args.b)
 
-    if not branch_a_exists:
-        # Branch A doesn't exist.
-        print 'ERR: Branch A must always exist.'
-        sys.exit(1)
+        # Check we can proceed.
+        if not a_exists:
+            raise GitError('Branch A does not exist. Branch A must always '
+                           'exist.')
 
-    repo.add(repo.get_branch_head(args.branch_a))
+        # Parse the history for the requested branches.
+        repo.add(repo.get_branch_head(args.a))
+        if b_exists:
+            repo.add(repo.get_branch_head(args.b))
 
-    if branch_b_exists:
-        repo.add(repo.get_branch_head(args.branch_b))
-        # Both branches exist.
-        try:
-            start_a = repo.get_branch_head(args.branch_a)
-            start_b = repo.get_branch_head(args.branch_b)
-            fork_commit, a_commits, b_commits = repo.find_fork_commit(start_a,
-                                                                      start_b)
-        except (GitError, TreeError), ex:
-            print 'ERR:', ex
-            sys.exit(1)
+        # Locate the relevant information in the history.
+        if b_exists:
+            # Both branches exist.
+            merge_commit = None
+            a_start = repo.get_branch_head(args.a)
+            b_start = repo.get_branch_head(args.b)
+            fork_commit, a_commits, b_commits = repo.find_fork_commit(a_start,
+                                                                      b_start)
+        else:
+            # Only branch A exists.
+            a_start = repo.get_branch_head(args.a)
+            merge_commit = repo.find_merge_commit(args.b, a_start, merge_re)
+            a_start = repo.get_commit_parent(merge_commit, 0).hash
+            b_start = repo.get_commit_parent(merge_commit, 1).hash
+            fork_commit, a_commits, b_commits = repo.find_fork_commit(a_start,
+                                                                      b_start)
 
+        # Print the requested information.
         if args.summary:
-            print_summary(args.branch_a, args.branch_b, branch_b_exists,
-                          fork_commit, None)
+            print_summary(args.a, args.b, b_exists, fork_commit, merge_commit)
         if args.commits:
             print ''
-            print_branch_diffs(args.branch_b, args.branch_a, b_commits,
-                               fork_commit, args.pretty)
+            print_branch_diffs(args.b, args.a, b_commits, fork_commit,
+                               args.pretty, update_re)
             if args.both_ways:
                 print ''
-                print_branch_diffs(args.branch_a, args.branch_b, a_commits,
-                                   fork_commit, args.pretty)
+                print_branch_diffs(args.a, args.b, a_commits, fork_commit,
+                                   args.pretty, update_re)
         if args.finger:
             print ''
-            print_finger(args.branch_b, args.branch_a, b_commits, fork_commit)
+            print_finger(args.b, args.a, b_commits, fork_commit, update_re)
             if args.both_ways:
                 print ''
-                print_finger(args.branch_a, args.branch_b, a_commits,
-                             fork_commit)
-    else:
-        # Only branch A exists.
-        try:
-            start_a = repo.get_branch_head(args.branch_a)
-            merge_commit = repo.find_merge_commit(args.branch_b, start_a,
-                                                  args.pattern)
-            start_a = repo.get_commit_parent(merge_commit, 0).hash
-            start_b = repo.get_commit_parent(merge_commit, 1).hash
-            fork_commit, a_commits, b_commits = repo.find_fork_commit(start_a,
-                                                                      start_b)
-        except (GitError, TreeError), ex:
-            print 'ERR:', ex
-            sys.exit(1)
-
-        if args.summary:
-            print_summary(args.branch_a, args.branch_b, branch_b_exists,
-                          fork_commit, merge_commit)
-        if args.commits:
-            print ''
-            print_branch_diffs(args.branch_b, args.branch_a, b_commits,
-                               fork_commit, args.pretty)
-            if args.both_ways:
-                print ''
-                print_branch_diffs(args.branch_a, args.branch_b, a_commits,
-                                   fork_commit, args.pretty)
-        if args.finger:
-            print ''
-            print_finger(args.branch_b, args.branch_a, b_commits, fork_commit)
-            if args.both_ways:
-                print ''
-                print_finger(args.branch_a, args.branch_b, a_commits,
-                             fork_commit)
-        if args.graph:
+                print_finger(args.a, args.b, a_commits, fork_commit, update_re)
+        if not b_exists and args.graph:
             print ''
             print_lifetime_graph(repo, fork_commit, merge_commit, args.pretty)
+    except (GitError, TreeError), ex:
+        print 'ERR:', ex
+        sys.exit(1)
 
 # Entry point.
 if __name__ == "__main__":

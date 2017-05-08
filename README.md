@@ -16,34 +16,38 @@
     - [Type](#type-2)
     - [Usage](#usage-2)
     - [Examples](#examples-2)
-  - [h2d](#h2d)
+  - [git-compare-branch](#git-compare-branch)
     - [Type](#type-3)
     - [Usage](#usage-3)
     - [Examples](#examples-3)
-  - [prepend](#prepend)
+  - [h2d](#h2d)
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
-  - [search](#search)
+  - [prepend](#prepend)
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
-  - [tabulate](#tabulate)
+  - [search](#search)
     - [Type](#type-6)
     - [Usage](#usage-6)
     - [Examples](#examples-6)
-  - [tcgdb](#tcgdb)
+  - [tabulate](#tabulate)
     - [Type](#type-7)
     - [Usage](#usage-7)
     - [Examples](#examples-7)
-  - [wcz](#wcz)
+  - [tcgdb](#tcgdb)
     - [Type](#type-8)
     - [Usage](#usage-8)
     - [Examples](#examples-8)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-9)
     - [Usage](#usage-9)
     - [Examples](#examples-9)
+  - [xwinid](#xwinid)
+    - [Type](#type-10)
+    - [Usage](#usage-10)
+    - [Examples](#examples-10)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -152,6 +156,208 @@ d2h 42
 
 echo 1234 | d2h
 0x4d2
+```
+
+## git-compare-branch
+#### Type
+Python script
+
+#### Usage
+```
+usage: git-compare-branch [-h] [-b] [-n [NUMBER]] [-e] [-m [PATTERN]]
+                          [-u [PATTERN]] [-p] [-s] [-S] [-c] [-C] [-f] [-F]
+                          [-g] [-G]
+                          BRANCH-A BRANCH-B
+
+Finds commits on branch B which are not on branch A. This is able to handle if
+B has already been merged down to A. This command runs purely locally and as
+such the branches to compare should be checked out and up to date before
+running. No state is changed by running this.
+
+positional arguments:
+  BRANCH-A              Branch A. This is the branch against which the
+                        difference is taken. It must exist locally.
+  BRANCH-B              Branch B. This is the branch whose differences are
+                        recorded. It must either exist locally or have a
+                        corresponding merge commit onto A within the lookback
+                        distance. See --merge-pattern and --lookback for
+                        details on identifying merge commits and setting the
+                        lookback respectively.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -b, --both-ways       Print not only the differences from B to A (the
+                        default), but also the differences from A to B.
+  -n [NUMBER], --lookback [NUMBER]
+                        Sets the number of commits to consider in the history.
+                        The lookback distance must cover the full lifetime of
+                        the branch (i.e. to the fork point). May be set to 0
+                        to consider all history (on large repositorys this may
+                        take some time). Defaults to 1000.
+  -e, --exclude-updates
+                        Exclude update commits (merges from A back to B) from
+                        all differences. By default all differences are
+                        considered.
+  -m [PATTERN], --merge-pattern [PATTERN]
+                        The stem merge commit pattern to identify the merge
+                        commit from B to A. This is only necessary if B does
+                        not exist. Defaults to the standard git merge pattern
+                        "Merge branch". If using a non-default value, the
+                        merge commit's subject must contain the pattern
+                        followed by the merged branch name. It is matched with
+                        the following regex: "^PATTERN.*BRANCH_NAME.*$".
+  -u [PATTERN], --update-pattern [PATTERN]
+                        The stem merge commit pattern to identify any 'update'
+                        merge commits from A to B. This is only necessary if
+                        using --exclude-updates and if this pattern differs
+                        from --merge-pattern. Defaults to the value given in
+                        --merge-pattern. If using a non-default value, all
+                        update merge commit subjects must contain the pattern
+                        followed by A's name followed by B's name. It is
+                        matched with the following regex:
+                        "^PATTERN.*BRANCH_A.*BRANCH_B.*$".
+  -p, --pretty          Print a short hash and the subject for all commits. By
+                        default just the full hash is printed.
+  -s, --summary         Print a summary of the status of each branch and their
+                        relationship. This is the default.
+  -S, --no-summary      Do not print the summary list (see --summary).
+  -c, --commits         Print a list of all commits which exist on branch B
+                        but not branch A. This is the default.
+  -C, --no-commits      Do not print the commit list (see --commits).
+  -f, --finger          Print a list of all users who have made commits on
+                        branch B.
+  -F, --no-finger       Do not print the finger list (see --finger). This is
+                        the default.
+  -g, --graph           Print a chronological graph of the commits made to
+                        branches A and B during their lifetime. This only has
+                        an effect if branch B has been merged into branch A,
+                        otherwise ignored. Corresponds to the --graph option
+                        of git log.
+  -G, --no-graph        Do not print the commit graph (see --graph). This is
+                        the default.
+```
+
+#### Examples
+```sh
+git branch
+* master
+  topic2
+  topic3
+
+
+git log --format=oneline --abbrev-commit --date-order
+47fe742 Merge branch 'topic3'
+756cd55 N (master)
+54059a7 Merge branch 'master' into topic3
+d141481 M (topic3)
+47a5aae L (master)
+ff936cf K (master)
+8816f86 I (master)
+a5cfb19 Merge branch 'topic1'
+f81d8c4 H (topic1)
+5a2c0b3 Merge branch 'master' into topic1
+d7f1922 G (topic1)
+a1ab060 E (master)
+98c83d3 F (topic1)
+493b66c D (master)
+89b81d5 C (master)
+a083abe B (master)
+6de4fd7 A ()
+
+
+git-compare-branch master topic3
+Summary:
+  topic3 still exists
+  topic3 forked from master at: 47a5aae55121c47d1a34ea7acd8b0358b0ff03da
+
+Commits made on master but not topic3:
+  54059a7d05f892c3d102eb7e0dbe4076e48f8e71
+  d14148128b363c9a03c78f742c0ccac65e9da5f4
+
+
+git-compare-branch master topic1 --pretty
+Summary:
+  topic1 no longer exists
+  topic1 merged into master at: a5cfb1905640ab0d70a30508031e3667d2e9463d
+  topic1 forked from master at: 493b66c7a4d9f975f871a6d984ee40061ffca218
+
+Commits made on master but not topic1:
+  f81d8c4 H (topic1)
+  5a2c0b3 Merge branch 'master' into topic1
+  d7f1922 G (topic1)
+  98c83d3 F (topic1)
+
+
+git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph
+Summary:
+  topic1 no longer exists
+  topic1 merged into master at: a5cfb1905640ab0d70a30508031e3667d2e9463d
+  topic1 forked from master at: 493b66c7a4d9f975f871a6d984ee40061ffca218
+
+Commits made on master but not topic1:
+  f81d8c4 H (topic1)
+  5a2c0b3 Merge branch 'master' into topic1
+  d7f1922 G (topic1)
+  98c83d3 F (topic1)
+
+Commits made on topic1 but not master:
+  a1ab060 E (master)
+
+Authors of commits on topic1 but not master:
+  Jonathan Simmonds <jonathansimmonds@gmail.com>
+
+Authors of commits on master but not topic1:
+  Jonathan Simmonds <jonathansimmonds@gmail.com>
+
+Graph:
+  *     a5cfb19 Merge branch 'topic1'
+  |\    
+  | *   f81d8c4 H (topic1)
+  | *   5a2c0b3 Merge branch 'master' into topic1
+  | |\  
+  | |/  
+  |/|   
+  * |   a1ab060 E (master)
+  | *   d7f1922 G (topic1)
+  | *   98c83d3 F (topic1)
+  |/    
+  *     493b66c D (master)
+
+
+git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph --exclude-updates
+Summary:
+  topic1 no longer exists
+  topic1 merged into master at: a5cfb1905640ab0d70a30508031e3667d2e9463d
+  topic1 forked from master at: 493b66c7a4d9f975f871a6d984ee40061ffca218
+
+Commits made on master but not topic1:
+  f81d8c4 H (topic1)
+  d7f1922 G (topic1)
+  98c83d3 F (topic1)
+
+Commits made on topic1 but not master:
+  a1ab060 E (master)
+
+Authors of commits on topic1 but not master:
+  Jonathan Simmonds <jonathansimmonds@gmail.com>
+
+Authors of commits on master but not topic1:
+  Jonathan Simmonds <jonathansimmonds@gmail.com>
+
+Graph:
+  *     a5cfb19 Merge branch 'topic1'
+  |\    
+  | *   f81d8c4 H (topic1)
+  | *   5a2c0b3 Merge branch 'master' into topic1
+  | |\  
+  | |/  
+  |/|   
+  * |   a1ab060 E (master)
+  | *   d7f1922 G (topic1)
+  | *   98c83d3 F (topic1)
+  |/    
+  *     493b66c D (master)
+
 ```
 
 ## h2d
@@ -387,7 +593,7 @@ find printers -name '*.py' -print0 | wcz
 581 lines in 5 files
 
 git ls-files -z | wcz -s
-2099 lines in 31 files
+3062 lines in 32 files
 ```
 
 ## xwinid
