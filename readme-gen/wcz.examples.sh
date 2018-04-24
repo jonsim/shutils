@@ -1,4 +1,4 @@
 set -v
-find printers -name '*.py' -print0 | wcz
+find readme-gen -name '*.txt' -print0 | wcz
 
 git ls-files -z | wcz -s

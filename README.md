@@ -241,62 +241,62 @@ git branch
 
 
 git log --format=oneline --abbrev-commit --date-order
-a0fcbdb Merge branch 'topic3'
-345c0d8 N (master)
-86e2f61 Merge branch 'master' into topic3
-2468f1c M (topic3)
-47a10a2 L (master)
-d65ef36 K (master)
-753882d I (master)
-6d54883 Merge branch 'topic1'
-129e8fe H (topic1)
-2f793a2 Merge branch 'master' into topic1
-01211e2 G (topic1)
-03bd8f8 E (master)
-2219deb F (topic1)
-4816be9 D (master)
-a2a1d0d C (master)
-230015c B (master)
-1aa24af A ()
+05da761 Merge branch 'topic3'
+8e6a4f6 N (master)
+21d0115 Merge branch 'master' into topic3
+4b413c9 M (topic3)
+eefd6b1 L (master)
+7b5f880 K (master)
+69824c5 I (master)
+ba95f94 Merge branch 'topic1'
+7b7e539 H (topic1)
+d1892d4 Merge branch 'master' into topic1
+77bea10 G (topic1)
+ae7aa71 E (master)
+84f28da F (topic1)
+1ef5be0 D (master)
+ef1e5b7 C (master)
+5015071 B (master)
+3639050 A ()
 
 
 git-compare-branch master topic3
 Summary:
   topic3 still exists
-  topic3 forked from master at: 47a10a2bfd8416162e497968aba2d870f33751ba
+  topic3 forked from master at: eefd6b1a23cb2040530316883cbb0d829e3dd48d
 
 Commits made on topic3 but not master:
-  86e2f6168779f3cd5012ea318f74ef06f530492e
-  2468f1ccdaa64281e19ebf47eea64f12103bb386
+  21d011532afe33e8dc6aa723266b6d4d7e1cdfc4
+  4b413c9e95b14b21f5003b57ee41393a04e719b9
 
 
 git-compare-branch master topic1 --pretty
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
-  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
+  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
+  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
 
 Commits made on topic1 but not master:
-  129e8fe H (topic1)
-  2f793a2 Merge branch 'master' into topic1
-  01211e2 G (topic1)
-  2219deb F (topic1)
+  7b7e539 H (topic1)
+  d1892d4 Merge branch 'master' into topic1
+  77bea10 G (topic1)
+  84f28da F (topic1)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
-  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
+  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
+  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
 
 Commits made on topic1 but not master:
-  129e8fe H (topic1)
-  2f793a2 Merge branch 'master' into topic1
-  01211e2 G (topic1)
-  2219deb F (topic1)
+  7b7e539 H (topic1)
+  d1892d4 Merge branch 'master' into topic1
+  77bea10 G (topic1)
+  84f28da F (topic1)
 
 Commits made on master but not topic1:
-  03bd8f8 E (master)
+  ae7aa71 E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -305,33 +305,33 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     6d54883 Merge branch 'topic1'
+  *     ba95f94 Merge branch 'topic1'
   |\    
-  | *   129e8fe H (topic1)
-  | *   2f793a2 Merge branch 'master' into topic1
+  | *   7b7e539 H (topic1)
+  | *   d1892d4 Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   03bd8f8 E (master)
-  | *   01211e2 G (topic1)
-  | *   2219deb F (topic1)
+  * |   ae7aa71 E (master)
+  | *   77bea10 G (topic1)
+  | *   84f28da F (topic1)
   |/    
-  *     4816be9 D (master)
+  *     1ef5be0 D (master)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph --exclude-updates
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 6d54883cc9d117911789425283e38be267222547
-  topic1 forked from master at: 4816be9eddc06b6cbf6e9d7fd4003fbbbabdef6e
+  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
+  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
 
 Commits made on topic1 but not master:
-  129e8fe H (topic1)
-  01211e2 G (topic1)
-  2219deb F (topic1)
+  7b7e539 H (topic1)
+  77bea10 G (topic1)
+  84f28da F (topic1)
 
 Commits made on master but not topic1:
-  03bd8f8 E (master)
+  ae7aa71 E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -340,18 +340,18 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     6d54883 Merge branch 'topic1'
+  *     ba95f94 Merge branch 'topic1'
   |\    
-  | *   129e8fe H (topic1)
-  | *   2f793a2 Merge branch 'master' into topic1
+  | *   7b7e539 H (topic1)
+  | *   d1892d4 Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   03bd8f8 E (master)
-  | *   01211e2 G (topic1)
-  | *   2219deb F (topic1)
+  * |   ae7aa71 E (master)
+  | *   77bea10 G (topic1)
+  | *   84f28da F (topic1)
   |/    
-  *     4816be9 D (master)
+  *     1ef5be0 D (master)
 
 ```
 
@@ -412,7 +412,6 @@ hello world
 this is
 a test
 ```
-
 
 ## tabulate
 #### Type
@@ -540,16 +539,11 @@ optional arguments:
 
 #### Examples
 ```sh
-find printers -name '*.py' -print0 | wcz
-  195 printers/decorategrep.py
-   21 printers/console.py
-  181 printers/search_result.py
-  110 printers/decoratefind.py
-   74 printers/ansi_decorate.py
-581 lines in 5 files
+find readme-gen -name '*.txt' -print0 | wcz
+1 lines in 1 files
 
 git ls-files -z | wcz -s
-3201 lines in 33 files
+2451 lines in 26 files
 ```
 
 ## xwinid
@@ -573,6 +567,6 @@ optional arguments:
 #### Examples
 ```sh
 xwinid compiz
-29360135
+29360129
 ```
 
