@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+# (c) Copyright 2017 Jonathan Simmonds
+# Script to measure the execution time of a command. This works in a similar way
+# to the Python timeit module (and has a broadly compatible command-line
+# interface for those familiar with it), except for a shell command.
+import argparse
+import gc
+import itertools
+import subprocess
+import sys
+import time
+
+SUBPROCESS_OVERHEAD = None
+# On Windows time.clock returns (highly accurate) wallclock time and is
+# preferable to time.time. On Unix time.time returns wallclock.
+TIMER = time.clock if sys.platform == "win32" else time.time
+
+def format_time(sec, unit=None):
+    if unit:
+        if unit == 's':
+            return '%.3f s' % (sec)
+        elif unit == 'ms':
+            return '%.3f ms' % (sec * 1e3)
+        elif unit == 'us':
+            return '%.3f us' % (sec * 1e6)
+        else:
+            raise Exception('Invalid unit')
+    else:
+        if sec > 1:
+            return '%.3f s' % (sec)
+        elif sec > 1e-3:
+            return '%.3f ms' % (sec * 1e3)
+        else:
+            return '%.3f us' % (sec * 1e6)
+
+def time_command(command, loops, timer=TIMER):
+    def _time_command(command, loops, timer):
+        itr = itertools.repeat(None, loops)
+        gcold = gc.isenabled()
+        gc.disable()
+        try:
+            t0 = timer()
+            for _ in itr:
+                subprocess.check_call(command, shell=True)
+            t1 = timer()
+            return t1 - t0
+        except:
+            raise
+        finally:
+            if gcold:
+                gc.enable()
+
+    global SUBPROCESS_OVERHEAD
+    # Benchmark SUBPROCESS_OVERHEAD if it hasn't been already (typically ~1 ms,
+    # so 256 iterations will take .25-.5 s).
+    if SUBPROCESS_OVERHEAD is None:
+        SUBPROCESS_OVERHEAD = _time_command('', 256, timer) / 256
+    # Return the adjusted time.
+    return _time_command(command, loops, timer) - (SUBPROCESS_OVERHEAD * loops)
+
+def benchmark_static(command, iterations):
+    return time_command(command, iterations)
+
+def benchmark_dynamic_time(command, maximum_time=2.0):
+    STEP = 2
+    latest_time = 0
+    latest_iterations = 1
+    while latest_time < (maximum_time / STEP):
+        latest_iterations *= STEP
+        latest_time = time_command(command, latest_iterations)
+        maximum_time -= latest_time
+    return latest_time, latest_iterations
+
+def benchmark_command(command, iterations=0, retries=1, format_unit=None):
+    times = []
+    try:
+        if iterations:
+            for _ in itertools.repeat(None, retries):
+                times.append(benchmark_static(command, iterations))
+        else:
+            times = []
+            elapsed, iterations = benchmark_dynamic_time(command)
+            times.append(elapsed)
+            for _ in itertools.repeat(None, retries - 1):
+                times.append(benchmark_static(command, iterations))
+    except subprocess.CalledProcessError as e:
+        print 'Command "%s" exited with status %d' % (e.cmd, e.returncode)
+        sys.exit(e.returncode)
+    best = min(times) / iterations
+    print '%d loops, best of %d: %s per loop' % (iterations, retries,
+                                                 format_time(best, format_unit))
+
+def main():
+    """Main method."""
+    # Handle command line
+    parser = argparse.ArgumentParser(description='Script to measure the '
+                                     'execution time of a command.')
+    parser.add_argument('-n', '--number',
+                        type=int, default=0,
+                        help='The number of times to execute COMMAND. May be '
+                        'omitted to automatically determine NUMBER.')
+    parser.add_argument('-r', '--repeat',
+                        type=int, default=3,
+                        help='The number of times to repeat the reading. '
+                        'Defaults to 3.')
+    parser.add_argument('-u', '--unit',
+                        type=str, choices=['us', 'ms', 's'], default=None,
+                        help='The unit of time to output. May be omitted to '
+                        'automatically determine the most appropriate unit.')
+    parser.add_argument('-v', '--verbose',
+                        action='store_const', const=True, default=False,
+                        help='Verbose output.')
+    parser.add_argument('command', metavar='COMMAND',
+                        type=str, nargs=argparse.REMAINDER,
+                        help='Command to time.')
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_usage()
+        print 'timeit: error: must provide command to execute'
+        sys.exit(1)
+
+    full_command = ' '.join(args.command)
+    benchmark_command(full_command, args.number, args.repeat,
+                      format_unit=args.unit)
+
+if __name__ == "__main__":
+    main()

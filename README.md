@@ -36,14 +36,18 @@
     - [Type](#type-7)
     - [Usage](#usage-7)
     - [Examples](#examples-7)
-  - [wcz](#wcz)
+  - [timeit](#timeit)
     - [Type](#type-8)
     - [Usage](#usage-8)
     - [Examples](#examples-8)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-9)
     - [Usage](#usage-9)
     - [Examples](#examples-9)
+  - [xwinid](#xwinid)
+    - [Type](#type-10)
+    - [Usage](#usage-10)
+    - [Examples](#examples-10)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -241,62 +245,62 @@ git branch
 
 
 git log --format=oneline --abbrev-commit --date-order
-05da761 Merge branch 'topic3'
-8e6a4f6 N (master)
-21d0115 Merge branch 'master' into topic3
-4b413c9 M (topic3)
-eefd6b1 L (master)
-7b5f880 K (master)
-69824c5 I (master)
-ba95f94 Merge branch 'topic1'
-7b7e539 H (topic1)
-d1892d4 Merge branch 'master' into topic1
-77bea10 G (topic1)
-ae7aa71 E (master)
-84f28da F (topic1)
-1ef5be0 D (master)
-ef1e5b7 C (master)
-5015071 B (master)
-3639050 A ()
+2a1cb62 Merge branch 'topic3'
+a71dca7 N (master)
+49a5f69 Merge branch 'master' into topic3
+e421b7c M (topic3)
+d09d310 L (master)
+d4ad145 K (master)
+b8488b7 I (master)
+7230943 Merge branch 'topic1'
+76d9272 H (topic1)
+a14eeaa Merge branch 'master' into topic1
+a3412ce G (topic1)
+03a184f E (master)
+ef330a9 F (topic1)
+956360b D (master)
+b3b371c C (master)
+ba91167 B (master)
+5565a58 A ()
 
 
 git-compare-branch master topic3
 Summary:
   topic3 still exists
-  topic3 forked from master at: eefd6b1a23cb2040530316883cbb0d829e3dd48d
+  topic3 forked from master at: d09d310e29b301ec55bc50cf73bacf999a6a5f9a
 
 Commits made on topic3 but not master:
-  21d011532afe33e8dc6aa723266b6d4d7e1cdfc4
-  4b413c9e95b14b21f5003b57ee41393a04e719b9
+  49a5f69b9309ae3de31b5398c934fb9152445874
+  e421b7cf0f000ca76389a5f07dcf50f32910b4ce
 
 
 git-compare-branch master topic1 --pretty
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
-  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
+  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
+  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
 
 Commits made on topic1 but not master:
-  7b7e539 H (topic1)
-  d1892d4 Merge branch 'master' into topic1
-  77bea10 G (topic1)
-  84f28da F (topic1)
+  76d9272 H (topic1)
+  a14eeaa Merge branch 'master' into topic1
+  a3412ce G (topic1)
+  ef330a9 F (topic1)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
-  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
+  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
+  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
 
 Commits made on topic1 but not master:
-  7b7e539 H (topic1)
-  d1892d4 Merge branch 'master' into topic1
-  77bea10 G (topic1)
-  84f28da F (topic1)
+  76d9272 H (topic1)
+  a14eeaa Merge branch 'master' into topic1
+  a3412ce G (topic1)
+  ef330a9 F (topic1)
 
 Commits made on master but not topic1:
-  ae7aa71 E (master)
+  03a184f E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -305,33 +309,33 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     ba95f94 Merge branch 'topic1'
+  *     7230943 Merge branch 'topic1'
   |\    
-  | *   7b7e539 H (topic1)
-  | *   d1892d4 Merge branch 'master' into topic1
+  | *   76d9272 H (topic1)
+  | *   a14eeaa Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   ae7aa71 E (master)
-  | *   77bea10 G (topic1)
-  | *   84f28da F (topic1)
+  * |   03a184f E (master)
+  | *   a3412ce G (topic1)
+  | *   ef330a9 F (topic1)
   |/    
-  *     1ef5be0 D (master)
+  *     956360b D (master)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph --exclude-updates
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: ba95f941c4bfad19b54d44fdca528c69761cce43
-  topic1 forked from master at: 1ef5be0a3a5eb465a6fb74e521b95d9ef3f2bbcd
+  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
+  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
 
 Commits made on topic1 but not master:
-  7b7e539 H (topic1)
-  77bea10 G (topic1)
-  84f28da F (topic1)
+  76d9272 H (topic1)
+  a3412ce G (topic1)
+  ef330a9 F (topic1)
 
 Commits made on master but not topic1:
-  ae7aa71 E (master)
+  03a184f E (master)
 
 Authors of commits on topic1 but not master:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
@@ -340,18 +344,18 @@ Authors of commits on master but not topic1:
   Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     ba95f94 Merge branch 'topic1'
+  *     7230943 Merge branch 'topic1'
   |\    
-  | *   7b7e539 H (topic1)
-  | *   d1892d4 Merge branch 'master' into topic1
+  | *   76d9272 H (topic1)
+  | *   a14eeaa Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   ae7aa71 E (master)
-  | *   77bea10 G (topic1)
-  | *   84f28da F (topic1)
+  * |   03a184f E (master)
+  | *   a3412ce G (topic1)
+  | *   ef330a9 F (topic1)
   |/    
-  *     1ef5be0 D (master)
+  *     956360b D (master)
 
 ```
 
@@ -521,6 +525,42 @@ optional arguments:
 tcgdb someapp.out
 ```
 
+## timeit
+#### Type
+Python script
+
+#### Usage
+```
+usage: timeit [-h] [-n NUMBER] [-r REPEAT] [-u {us,ms,s}] [-v] ...
+
+Script to measure the execution time of a command.
+
+positional arguments:
+  COMMAND               Command to time.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n NUMBER, --number NUMBER
+                        The number of times to execute COMMAND. May be omitted
+                        to automatically determine NUMBER.
+  -r REPEAT, --repeat REPEAT
+                        The number of times to repeat the reading. Defaults to
+                        3.
+  -u {us,ms,s}, --unit {us,ms,s}
+                        The unit of time to output. May be omitted to
+                        automatically determine the most appropriate unit.
+  -v, --verbose         Verbose output.
+```
+
+#### Examples
+```sh
+timeit find . -name nope
+128 loops, best of 3: 4.476 ms per loop
+
+timeit -n 1000 -r 2 "ls > /dev/null"
+1000 loops, best of 2: 969.999 us per loop
+```
+
 ## wcz
 #### Type
 POSIX shell script
@@ -543,7 +583,7 @@ find readme-gen -name '*.txt' -print0 | wcz
 1 lines in 1 files
 
 git ls-files -z | wcz -s
-2451 lines in 26 files
+2577 lines in 27 files
 ```
 
 ## xwinid
