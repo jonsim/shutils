@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# (c) Copyright 2017 Jonathan Simmonds
+# (c) Copyright 2018 Jonathan Simmonds
 # Script to measure the execution time of a command. This works in a similar way
 # to the Python timeit module (and has a broadly compatible command-line
 # interface for those familiar with it), except for a shell command.
