@@ -169,8 +169,8 @@ Python script
 #### Usage
 ```
 usage: git-compare-branch [-h] [-b] [-n [NUMBER]] [-e] [-m [PATTERN]]
-                          [-u [PATTERN]] [-p] [-s] [-S] [-c] [-C] [-f] [-F]
-                          [-g] [-G]
+                          [-u [PATTERN]] [--loose-merge-pattern] [-p] [-s]
+                          [-S] [-c] [-C] [-f] [-F] [-g] [-G]
                           BRANCH-A BRANCH-B
 
 Finds commits on branch B which are not on branch A. This is able to handle if
@@ -218,7 +218,11 @@ optional arguments:
                         --merge-pattern. All 'update' merge commit subjects
                         must contain the pattern followed by A's name followed
                         by B's name. It is matched with the following regex:
-                        ^PATTERN.*BRANCH_A.*BRANCH_B.*$
+                        ^PATTERN.*BRANCH_A.*$
+  --loose-merge-pattern
+                        Exclude the branchname from the merge and update
+                        patterns (so they match just the pattern given). By
+                        default the branchname is included.
   -p, --pretty          Print a short hash and the subject for all commits. By
                         default just the full hash is printed.
   -s, --summary         Print a summary of the status of each branch and their
@@ -249,117 +253,117 @@ git branch
 
 
 git log --format=oneline --abbrev-commit --date-order
-2a1cb62 Merge branch 'topic3'
-a71dca7 N (master)
-49a5f69 Merge branch 'master' into topic3
-e421b7c M (topic3)
-d09d310 L (master)
-d4ad145 K (master)
-b8488b7 I (master)
-7230943 Merge branch 'topic1'
-76d9272 H (topic1)
-a14eeaa Merge branch 'master' into topic1
-a3412ce G (topic1)
-03a184f E (master)
-ef330a9 F (topic1)
-956360b D (master)
-b3b371c C (master)
-ba91167 B (master)
-5565a58 A ()
+0ff720c Merge branch 'topic3'
+1bddb09 N (master)
+ff2fa26 Merge branch 'master' into topic3
+4517b81 M (topic3)
+48adb5a L (master)
+14dbda6 K (master)
+c3e48a2 I (master)
+26a1f0d Merge branch 'topic1'
+812f773 H (topic1)
+d129d72 Merge branch 'master' into topic1
+d1bb781 G (topic1)
+f8556f0 E (master)
+558f44b F (topic1)
+c5aaaa9 D (master)
+48b70ff C (master)
+7292420 B (master)
+d782883 A ()
 
 
 git-compare-branch master topic3
 Summary:
   topic3 still exists
-  topic3 forked from master at: d09d310e29b301ec55bc50cf73bacf999a6a5f9a
+  topic3 forked from master at: 14dbda6586c492639f47c6591b63fbd06e74a363
 
 Commits made on topic3 but not master:
-  49a5f69b9309ae3de31b5398c934fb9152445874
-  e421b7cf0f000ca76389a5f07dcf50f32910b4ce
+  ff2fa26b1cf17a510b7fc88eb7085b24d53bcf73
+  4517b814b7703d7364fd44f736bcb4b5e17be023
 
 
 git-compare-branch master topic1 --pretty
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
-  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
+  topic1 merged into master at: 26a1f0d8a6c6cddaff2bdd6c7a96430af364cee6
+  topic1 forked from master at: c5aaaa948f48d1b8e8e86b850baa1274458da410
 
 Commits made on topic1 but not master:
-  76d9272 H (topic1)
-  a14eeaa Merge branch 'master' into topic1
-  a3412ce G (topic1)
-  ef330a9 F (topic1)
+  812f773 [Fri Jul 24 15:59:55 2020 +0100] H (topic1)
+  d129d72 [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'master' into topic1
+  d1bb781 [Fri Jul 24 15:59:55 2020 +0100] G (topic1)
+  558f44b [Fri Jul 24 15:59:55 2020 +0100] F (topic1)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
-  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
+  topic1 merged into master at: 26a1f0d8a6c6cddaff2bdd6c7a96430af364cee6
+  topic1 forked from master at: c5aaaa948f48d1b8e8e86b850baa1274458da410
 
 Commits made on topic1 but not master:
-  76d9272 H (topic1)
-  a14eeaa Merge branch 'master' into topic1
-  a3412ce G (topic1)
-  ef330a9 F (topic1)
+  812f773 [Fri Jul 24 15:59:55 2020 +0100] H (topic1)
+  d129d72 [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'master' into topic1
+  d1bb781 [Fri Jul 24 15:59:55 2020 +0100] G (topic1)
+  558f44b [Fri Jul 24 15:59:55 2020 +0100] F (topic1)
 
 Commits made on master but not topic1:
-  03a184f E (master)
+  f8556f0 [Fri Jul 24 15:59:55 2020 +0100] E (master)
 
 Authors of commits on topic1 but not master:
-  Jonathan Simmonds <jonathansimmonds@gmail.com>
+  4 Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Authors of commits on master but not topic1:
-  Jonathan Simmonds <jonathansimmonds@gmail.com>
+  1 Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     7230943 Merge branch 'topic1'
+  *     26a1f0d [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'topic1'
   |\    
-  | *   76d9272 H (topic1)
-  | *   a14eeaa Merge branch 'master' into topic1
+  | *   812f773 [Fri Jul 24 15:59:55 2020 +0100] H (topic1)
+  | *   d129d72 [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   03a184f E (master)
-  | *   a3412ce G (topic1)
-  | *   ef330a9 F (topic1)
+  * |   f8556f0 [Fri Jul 24 15:59:55 2020 +0100] E (master)
+  | *   d1bb781 [Fri Jul 24 15:59:55 2020 +0100] G (topic1)
+  | *   558f44b [Fri Jul 24 15:59:55 2020 +0100] F (topic1)
   |/    
-  *     956360b D (master)
+  *     c5aaaa9 [Fri Jul 24 15:59:55 2020 +0100] D (master)
 
 
 git-compare-branch master topic1 --both-ways --pretty --summary --commits --finger --graph --exclude-updates
 Summary:
   topic1 no longer exists
-  topic1 merged into master at: 7230943d62485a2926e66a7b13c011221ea5e208
-  topic1 forked from master at: 956360be5063f9da2e6ac8d1b59c08d132e48eb0
+  topic1 merged into master at: 26a1f0d8a6c6cddaff2bdd6c7a96430af364cee6
+  topic1 forked from master at: c5aaaa948f48d1b8e8e86b850baa1274458da410
 
 Commits made on topic1 but not master:
-  76d9272 H (topic1)
-  a3412ce G (topic1)
-  ef330a9 F (topic1)
+  812f773 [Fri Jul 24 15:59:55 2020 +0100] H (topic1)
+  d1bb781 [Fri Jul 24 15:59:55 2020 +0100] G (topic1)
+  558f44b [Fri Jul 24 15:59:55 2020 +0100] F (topic1)
 
 Commits made on master but not topic1:
-  03a184f E (master)
+  f8556f0 [Fri Jul 24 15:59:55 2020 +0100] E (master)
 
 Authors of commits on topic1 but not master:
-  Jonathan Simmonds <jonathansimmonds@gmail.com>
+  3 Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Authors of commits on master but not topic1:
-  Jonathan Simmonds <jonathansimmonds@gmail.com>
+  1 Jonathan Simmonds <jonathansimmonds@gmail.com>
 
 Graph:
-  *     7230943 Merge branch 'topic1'
+  *     26a1f0d [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'topic1'
   |\    
-  | *   76d9272 H (topic1)
-  | *   a14eeaa Merge branch 'master' into topic1
+  | *   812f773 [Fri Jul 24 15:59:55 2020 +0100] H (topic1)
+  | *   d129d72 [Fri Jul 24 15:59:55 2020 +0100] Merge branch 'master' into topic1
   | |\  
   | |/  
   |/|   
-  * |   03a184f E (master)
-  | *   a3412ce G (topic1)
-  | *   ef330a9 F (topic1)
+  * |   f8556f0 [Fri Jul 24 15:59:55 2020 +0100] E (master)
+  | *   d1bb781 [Fri Jul 24 15:59:55 2020 +0100] G (topic1)
+  | *   558f44b [Fri Jul 24 15:59:55 2020 +0100] F (topic1)
   |/    
-  *     956360b D (master)
+  *     c5aaaa9 [Fri Jul 24 15:59:55 2020 +0100] D (master)
 
 ```
 
@@ -591,10 +595,10 @@ optional arguments:
 #### Examples
 ```sh
 timeit find . -name nope
-128 loops, best of 3: 4.476 ms per loop
+1024 loops, best of 3: 781.236 us per loop
 
 timeit -n 1000 -r 2 "ls > /dev/null"
-1000 loops, best of 2: 969.999 us per loop
+1000 loops, best of 2: 552.549 us per loop
 ```
 
 ## wcz
@@ -619,7 +623,7 @@ find readme-gen -name '*.txt' -print0 | wcz
 1 lines in 1 files
 
 git ls-files -z | wcz -s
-2577 lines in 27 files
+2718 lines in 30 files
 ```
 
 ## xwinid

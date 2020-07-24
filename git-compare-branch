@@ -42,9 +42,9 @@ class Commit(object):
 
     def __str__(self):
         """str cast operator."""
-        return '%s %s %s\n%s %s %s %s' % \
-            (self.hash, str(self.parents), str(self.children), self.commit_date,
-             self.author_name, self.author_email, self.subject)
+        return 'commit   %s\nparents  %s\nchildren %s\nauthor   %s <%s>\ndate     %s\n%s' % \
+            (self.hash, ' '.join(self.parents), ' '.join(self.children),
+             self.author_name, self.author_email, self.commit_date, self.subject)
 
     def __hash__(self):
         """Hash operator."""
@@ -103,7 +103,7 @@ class Commit(object):
             string: Representation of the commit.
         """
         if pretty:
-            return '%s %s' % (self.hash[:7], self.subject)
+            return '%s [%s] %s' % (self.hash[:7], self.commit_date, self.subject)
         return self.hash
 
 class Repo(object):
@@ -396,9 +396,20 @@ class Repo(object):
         for i in range(-2, -min(len(visits_a), len(visits_b)) - 1, -1):
             if visits_a[i] != visits_b[i]:
                 ancestor_i = i+1
+                break
         if ancestor_i is None:
             raise TreeError('Histories for %s and %s are identical.'
                             % (sha_a, sha_b))
+
+
+        #print 'Found first difference @ ' + visits_a[ancestor_i].hash
+        #print 'A (5 either side):'
+        #print '  ' + '\n  '.join([c.to_string(False) for c in visits_a[ancestor_i-5:ancestor_i+5]])
+        #print ''
+        #print 'B (5 either side):'
+        #print '  ' + '\n  '.join([c.to_string(False) for c in visits_b[ancestor_i-5:ancestor_i+5]])
+        #print ''
+
         a_diffs = [a for a in visits_a if a not in visits_b]
         b_diffs = [b for b in visits_b if b not in visits_a]
         return visits_a[ancestor_i], a_diffs, b_diffs
@@ -526,7 +537,7 @@ def print_finger(branch_a, branch_b, b_commits, fork_commit,
             authors.append((commit.author_name, commit.author_email))
     print 'Authors of commits on %s but not %s:' % (branch_b, branch_a)
     for author in set(authors):
-        print '  %s <%s>' % (author[0], author[1])
+        print '  %s %s <%s>' % (authors.count(author), author[0], author[1])
 
 def print_lifetime_graph(repo, start_commit, end_commit, pretty=False):
     """Prints the topology graph between two commits.
@@ -615,7 +626,13 @@ def main():
                         'value given in --merge-pattern. All \'update\' merge '
                         'commit subjects must contain the pattern followed by '
                         'A\'s name followed by B\'s name. It is matched with '
-                        'the following regex: ^PATTERN.*BRANCH_A.*BRANCH_B.*$')
+                        'the following regex: ^PATTERN.*BRANCH_A.*$')
+    parser.add_argument('--loose-merge-pattern',
+                        dest='loose_merge_pattern', action='store_true',
+                        default=False,
+                        help='Exclude the branchname from the merge and update '
+                        'patterns (so they match just the pattern given). By '
+                        'default the branchname is included.')
     parser.add_argument('-p', '--pretty',
                         dest='pretty', action='store_true',
                         default=False,
@@ -665,11 +682,18 @@ def main():
     args = parser.parse_args()
 
     # Post-process command line.
-    merge_re = re.compile('^%s.*%s' % (args.merge_pattern, args.b))
-    update_re = re.compile('^%s.*%s.*%s' %
-                           (args.update_pattern if args.update_pattern is
-                            not None else args.merge_pattern,
-                            args.a, args.b)) if args.exclude_updates else None
+    if args.loose_merge_pattern:
+        merge_re = re.compile('^%s' % (args.merge_pattern))
+        update_re = re.compile('^%s' %
+                               (args.update_pattern if args.update_pattern is
+                                not None else args.merge_pattern)) \
+                                if args.exclude_updates else None
+    else:
+        merge_re = re.compile('^%s.*%s' % (args.merge_pattern, args.b))
+        update_re = re.compile('^%s.*%s' %
+                               (args.update_pattern if args.update_pattern is
+                                not None else args.merge_pattern, args.a)) \
+                                if args.exclude_updates else None
 
     # Just do it.
     try:
