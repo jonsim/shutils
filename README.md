@@ -24,30 +24,34 @@
     - [Type](#type-4)
     - [Usage](#usage-4)
     - [Examples](#examples-4)
-  - [prepend](#prepend)
+  - [json-print](#json-print)
     - [Type](#type-5)
     - [Usage](#usage-5)
     - [Examples](#examples-5)
-  - [tabulate](#tabulate)
+  - [prepend](#prepend)
     - [Type](#type-6)
     - [Usage](#usage-6)
     - [Examples](#examples-6)
-  - [tcgdb](#tcgdb)
+  - [tabulate](#tabulate)
     - [Type](#type-7)
     - [Usage](#usage-7)
     - [Examples](#examples-7)
-  - [timeit](#timeit)
+  - [tcgdb](#tcgdb)
     - [Type](#type-8)
     - [Usage](#usage-8)
     - [Examples](#examples-8)
-  - [wcz](#wcz)
+  - [timeit](#timeit)
     - [Type](#type-9)
     - [Usage](#usage-9)
     - [Examples](#examples-9)
-  - [xwinid](#xwinid)
+  - [wcz](#wcz)
     - [Type](#type-10)
     - [Usage](#usage-10)
     - [Examples](#examples-10)
+  - [xwinid](#xwinid)
+    - [Type](#type-11)
+    - [Usage](#usage-11)
+    - [Examples](#examples-11)
 
 # shutils
 Collection of my sh utils, for use in all POSIX compliant shells. All
@@ -383,6 +387,38 @@ h2d 0x42
 
 echo 1234 | h2d
 4660
+```
+
+## json-print
+#### Type
+Python script
+
+#### Usage
+```
+usage: json-print [-h] [input]
+
+Pretty-prints JSON. Input can either be given as an argument
+or via stdin.
+
+optional arguments:
+  -h, --help     Print this message and exit.
+```
+
+#### Examples
+```sh
+json-print '{"valuable information":{"answer":42}}'
+{
+  "valuable information": {
+    "answer": 42
+  }
+}
+
+echo '{"valuable information":{"answer":42}}' | json-print
+{
+  "valuable information": {
+    "answer": 42
+  }
+}
 ```
 
 ## prepend

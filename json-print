@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+# (c) Copyright 2020 Jonathan Simmonds
+# Tiny script to pretty print JSON.
+import json, os, sys
+
+def usage(script_name):
+    print "usage: %s [-h] [input]" % (script_name)
+    print ""
+    print "Pretty-prints JSON. Input can either be given as an argument"
+    print "or via stdin."
+    print ""
+    print "optional arguments:"
+    print "  -h, --help     Print this message and exit."
+    sys.exit(1)
+
+# Work out what functionality we are trying to provide.
+script_name = os.path.basename(sys.argv[0])
+# Parse the command line.
+argc = len(sys.argv)
+lines = []
+if argc == 1 and not sys.stdin.isatty():
+    for line in sys.stdin:
+        lines.append(line)
+elif argc == 2:
+    arg = sys.argv[1]
+    if arg == "-h" or arg == "-help" or arg == "--help":
+        usage(script_name)
+    lines.append(arg)
+else:
+    usage(script_name)
+
+# Actual implemetation...
+print json.dumps(json.loads(''.join(lines)), indent=2, sort_keys=True)
